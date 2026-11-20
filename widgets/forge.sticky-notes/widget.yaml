@@ -1,0 +1,32 @@
+schema: 1
+id: forge.sticky-notes
+name: Sticky Notes
+version: 1.0.0
+author: WidgetForge
+description: Quick notes that stay on your desktop. Add as many as you like.
+category: productivity
+icon: icon.svg
+
+window:
+  size: [240, 220]
+  min_size: [140, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: solid
+  accent: "#ffd65c"
+
+permissions:
+  storage: true
+
+settings:
+  - key: color
+    type: choice
+    label: Paper colour
+    default: yellow
+    options: [yellow, pink, green, blue, purple, graphite]
+
+ui:
+  blocks:
+    - { type: notes, key: text, placeholder: "Write something…", paper: "{{ settings.color }}" }

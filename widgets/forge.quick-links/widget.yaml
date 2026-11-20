@@ -1,0 +1,36 @@
+schema: 1
+id: forge.quick-links
+name: Quick Links
+version: 1.0.0
+author: WidgetForge
+description: One-click buttons for the sites you open every day.
+category: productivity
+icon: icon.svg
+
+window:
+  size: [300, 120]
+  min_size: [160, 80]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ffd166"
+
+settings:
+  - { key: name1, type: text, label: Link 1 name, default: Mail }
+  - { key: url1, type: text, label: Link 1 URL, default: "https://mail.google.com" }
+  - { key: name2, type: text, label: Link 2 name, default: Calendar }
+  - { key: url2, type: text, label: Link 2 URL, default: "https://calendar.google.com" }
+  - { key: name3, type: text, label: Link 3 name, default: GitHub }
+  - { key: url3, type: text, label: Link 3 URL, default: "https://github.com" }
+
+ui:
+  blocks:
+    - type: grid
+      columns: 3
+      gap: 8
+      children:
+        - { type: button, label: "{{ settings.name1 }}", open: "{{ settings.url1 }}", visible: "{{ settings.url1 }}" }
+        - { type: button, label: "{{ settings.name2 }}", open: "{{ settings.url2 }}", visible: "{{ settings.url2 }}" }
+        - { type: button, label: "{{ settings.name3 }}", open: "{{ settings.url3 }}", visible: "{{ settings.url3 }}" }

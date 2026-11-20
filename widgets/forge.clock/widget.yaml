@@ -1,0 +1,48 @@
+schema: 1
+id: forge.clock
+name: Clock
+version: 1.0.0
+author: WidgetForge
+description: Analog or digital clock with the date. Add more for world clocks.
+category: time
+icon: icon.svg
+
+window:
+  size: [220, 286]
+  min_size: [140, 160]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7cc4ff"
+
+settings:
+  - { key: label, type: text, label: Label (e.g. city), default: "" }
+  - { key: analog, type: bool, label: Analog face, default: true }
+  - { key: seconds, type: bool, label: Show seconds, default: true }
+  - { key: h24, type: bool, label: 24-hour time, default: true }
+
+data:
+  now: { source: clock, interval: 1000 }
+
+ui:
+  blocks:
+    - type: column
+      gap: 6
+      children:
+        - { type: clock, seconds: "{{ settings.seconds }}", visible: "{{ settings.analog }}" }
+        - type: text
+          text: "{{ now.now | time('HH:mm') }}"
+          size: xxl
+          weight: bold
+          align: center
+          visible: "{{ settings.h24 }}"
+        - type: text
+          text: "{{ now.now | time('h:mm A') }}"
+          size: xxl
+          weight: bold
+          align: center
+          visible: "{{ settings.h24 | not }}"
+        - { type: text, text: "{{ now.now | date('dddd, MMMM D') }}", size: sm, align: center, color: muted }
+        - { type: text, text: "{{ settings.label }}", size: xs, align: center, color: accent, visible: "{{ settings.label }}" }

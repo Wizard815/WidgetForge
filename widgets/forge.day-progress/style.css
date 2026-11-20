@@ -1,0 +1,7 @@
+html, body { margin: 0; background: transparent; color: #eef2f8; font: 13px/1.3 system-ui, "Segoe UI", sans-serif; }
+#rows { display: flex; flex-direction: column; gap: 10px; }
+.row .top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.row .name { opacity: .8; }
+.row .pct { font-variant-numeric: tabular-nums; font-weight: 600; }
+.track { height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.fill { height: 100%; border-radius: 4px; background: var(--accent, #a0e86f); transition: width .6s ease; }

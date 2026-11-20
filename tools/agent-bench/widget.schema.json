@@ -1,0 +1,864 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://widgetforge.app/schema/widget-1.json",
+  "title": "WidgetForge widget manifest (schema 1, declarative subset for Forge Assistant)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "version",
+    "description",
+    "category",
+    "window",
+    "style",
+    "permissions",
+    "settings",
+    "data",
+    "ui"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "category": {
+      "enum": [
+        "time",
+        "productivity",
+        "system",
+        "media",
+        "info",
+        "fun",
+        "other"
+      ]
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "size",
+        "layer"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "tile",
+            "drawer"
+          ]
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 80,
+            "maximum": 1200
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "layer": {
+          "enum": [
+            "top",
+            "normal",
+            "desktop"
+          ]
+        },
+        "edge": {
+          "enum": [
+            "left",
+            "right",
+            "top",
+            "bottom"
+          ],
+          "description": "drawer only (required for drawer)"
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme",
+        "accent"
+      ],
+      "properties": {
+        "theme": {
+          "enum": [
+            "glass",
+            "solid",
+            "none"
+          ]
+        },
+        "accent": {
+          "$ref": "#/$defs/color"
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "network",
+        "storage"
+      ],
+      "properties": {
+        "system": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "cpu",
+              "memory",
+              "disk",
+              "network",
+              "os"
+            ]
+          }
+        },
+        "network": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "storage": {
+          "type": "boolean"
+        }
+      }
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "type",
+          "label",
+          "default"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "text",
+              "number",
+              "bool",
+              "choice",
+              "color"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "default": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "interval"
+        ],
+        "properties": {
+          "source": {
+            "enum": [
+              "clock",
+              "system"
+            ]
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 3600000
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocks"
+      ],
+      "properties": {
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "num": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "number or {{ template }}"
+    },
+    "spacerBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "spacer"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "textBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "text"
+        },
+        "text": {
+          "type": "string"
+        },
+        "size": {
+          "enum": [
+            "xs",
+            "sm",
+            "md",
+            "lg",
+            "xl",
+            "xxl"
+          ]
+        },
+        "weight": {
+          "enum": [
+            "normal",
+            "bold"
+          ]
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "mono": {
+          "type": "boolean"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "gaugeBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "gauge"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "label": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "barBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bar"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "label": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "graphBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "graph"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "number or {{ template }}"
+        },
+        "label": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 300
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "listBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "list"
+        },
+        "items": {
+          "type": "string"
+        },
+        "item": {
+          "type": "string"
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "items",
+        "item"
+      ],
+      "additionalProperties": false
+    },
+    "imageBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "image"
+        },
+        "src": {
+          "type": "string"
+        },
+        "fit": {
+          "enum": [
+            "contain",
+            "cover",
+            "fill"
+          ]
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "src"
+      ],
+      "additionalProperties": false
+    },
+    "clockBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "clock"
+        },
+        "seconds": {
+          "type": "boolean"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "buttonBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "button"
+        },
+        "label": {
+          "type": "string"
+        },
+        "open": {
+          "type": "string",
+          "pattern": "^https?://[^ ]+$"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "label",
+        "open"
+      ],
+      "additionalProperties": false
+    },
+    "notesBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "notes"
+        },
+        "key": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "checklistBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "checklist"
+        },
+        "key": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "leafBlock": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/spacerBlock"
+        },
+        {
+          "$ref": "#/$defs/textBlock"
+        },
+        {
+          "$ref": "#/$defs/gaugeBlock"
+        },
+        {
+          "$ref": "#/$defs/barBlock"
+        },
+        {
+          "$ref": "#/$defs/graphBlock"
+        },
+        {
+          "$ref": "#/$defs/listBlock"
+        },
+        {
+          "$ref": "#/$defs/imageBlock"
+        },
+        {
+          "$ref": "#/$defs/clockBlock"
+        },
+        {
+          "$ref": "#/$defs/buttonBlock"
+        },
+        {
+          "$ref": "#/$defs/notesBlock"
+        },
+        {
+          "$ref": "#/$defs/checklistBlock"
+        }
+      ]
+    },
+    "columnInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "column"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/leafBlock"
+          },
+          "minItems": 1
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "rowInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "row"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/leafBlock"
+          },
+          "minItems": 1
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "gridInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "grid"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/leafBlock"
+          },
+          "minItems": 1
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "columnOuter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "column"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/innerBlock"
+          },
+          "minItems": 1
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "rowOuter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "row"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/innerBlock"
+          },
+          "minItems": 1
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "gridOuter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "grid"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/innerBlock"
+          },
+          "minItems": 1
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "visible": {
+          "type": "string",
+          "description": "template; block hidden when falsy"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "innerBlock": {
+      "description": "leaf block or a container whose children are leaf blocks",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/leafBlock"
+        },
+        {
+          "$ref": "#/$defs/columnInner"
+        },
+        {
+          "$ref": "#/$defs/rowInner"
+        },
+        {
+          "$ref": "#/$defs/gridInner"
+        }
+      ]
+    },
+    "block": {
+      "description": "top-level block: leaf, or container nesting up to 2 levels",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/leafBlock"
+        },
+        {
+          "$ref": "#/$defs/columnOuter"
+        },
+        {
+          "$ref": "#/$defs/rowOuter"
+        },
+        {
+          "$ref": "#/$defs/gridOuter"
+        }
+      ]
+    }
+  }
+}

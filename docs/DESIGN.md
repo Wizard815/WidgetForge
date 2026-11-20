@@ -186,9 +186,11 @@ Interactive: `button` (runs an action), `notes` (editable text saved to storage)
 `checklist`.
 
 Bindings use `{{ path | filter(arg) }}`. Paths read from `data` sources, `settings.*`
-and `instance.*`. Filters: `fixed(n)`, `round`, `percent`, `bytes`, `rate` (bytes/s),
-`date(fmt)`, `time(fmt)`, `upper`, `lower`, `default(x)`. No arbitrary code runs in
-bindings.
+and `instance.*` (`a.b[0].c` indexing works). Filters: `fixed(n)`, `round`, `percent(n)`,
+`bytes(n)`, `rate(n)` (bytes/s), `duration` (seconds → "3d 4h"), `date(fmt)`, `time(fmt)`,
+`upper`, `lower`, `default(x)`, `count`, `not`. Date tokens: `YYYY MMMM MMM MM M DD D dddd
+ddd HH H hh h mm ss A`, `[literal]`. A value that is exactly one `{{ … }}` keeps its type
+(a number stays a number). No arbitrary code runs in bindings.
 
 `visible: "{{ settings.show_disk }}"` hides a block.
 
@@ -304,11 +306,21 @@ Design:
     Runs on CPU, or offloads to a GPU with ≥ 4 GB VRAM. Fits on a 6 GB GPU.
   - **Ollama / LM Studio**: any local OpenAI-compatible endpoint.
   - **Cloud**: any OpenAI-compatible API key (OpenRouter, OpenAI, …).
-- Model choice is decided by the benchmark in `tools/agent-bench` (see its README):
-  the same prompts, schema-constrained, scored on validity and on whether the widget
-  matches the request.
+- Model choice comes from the benchmark in `tools/agent-bench` (results in its
+  `RESULTS.md`): 10 tasks, schema-constrained, scored on validity and on whether the
+  widget matches the request. First run (Nov 2026, via OpenRouter, ~$0.10):
+  - 2–4B models (Gemma 3 4B, Llama 3.2 3B, Ministral 3B) produced valid manifests only
+    30–45% of the time; the self-repair retry barely helped them.
+  - 8–9B models were usable: Ministral 8B 96% semantic / 70% fully correct (75% with
+    one repair), Granite 4.2 8B 100% valid after one repair, Qwen 3.5 9B best validity
+    but ~6.6 GB at Q4.
+  - Plan: default to Ministral 8B at Q4_K_M with a 4k context (~6 GB, borderline on a
+    6 GB card; offload 1–2 layers to CPU if needed). Keep the self-repair retry. Retest
+    3–4B models locally with grammar-enforced decoding, since many of their failures
+    were schema errors the hosted providers didn't enforce.
 - Packaging: the model ships as an optional download (or a free Steam DLC depot) so the
-  base install stays small. Check the model's licence before redistribution.
+  base install stays small. Check the model's licence before redistribution (the
+  candidates above are believed to be Apache 2.0 — verify).
 
 ## 12. Platforms
 
@@ -343,7 +355,7 @@ Design:
 
 | | Scope |
 |---|---|
-| **M1 — Core** (this branch) | Registry, layout, widget windows (tile/drawer, layers), tray, autostart, single instance, Hub, blocks renderer, HTML widget sandbox + SDK, system source, storage, import/export. Widgets: Clock, Sticky Notes, System Monitor. Assistant benchmark. |
+| **M1 — Core** (done, needs a Windows test pass) | Registry, layout, widget windows (tile/drawer, layers), tray, autostart, single instance, Hub, blocks renderer, HTML widget sandbox + SDK, system source, storage, import/export. Widgets: Clock, Sticky Notes, System Monitor. Assistant benchmark. |
 | M2 — Media & system | Media source (SMTC/MPRIS), GPU, battery, net fetch with OAuth, Weather, Media Player, Spotify, fullscreen auto-hide, per-widget AppUserModelID. |
 | M3 — Create | Visual builder, `forge dev`, guide site, Forge Assistant in the Hub. |
 | M4 — Share | GitHub registry + Browse tab, Steam Workshop, desk profiles. |
@@ -354,3 +366,5 @@ Design:
 - Pricing and whether the assistant model ships as DLC or an in-app download.
 - Whether to sign widgets from the GitHub registry (publisher keys) in M4.
 - Compositor-mode fallback if per-window memory is too high on Windows.
+- New widgets are cascaded from the top-right corner; they should find free space instead.
+- Acrylic/Mica window effects for the `glass` theme on Windows 11 (Tauri window effects).

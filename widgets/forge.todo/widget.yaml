@@ -1,0 +1,32 @@
+schema: 1
+id: forge.todo
+name: To-do
+version: 1.0.0
+author: WidgetForge
+description: A simple checklist. Tick things off, clear them when done.
+category: productivity
+icon: icon.svg
+
+window:
+  size: [260, 300]
+  min_size: [180, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ff8fa3"
+
+permissions:
+  storage: true
+
+settings:
+  - { key: title, type: text, label: Title, default: To-do }
+
+ui:
+  blocks:
+    - type: column
+      gap: 8
+      children:
+        - { type: text, text: "{{ settings.title }}", size: lg, weight: bold }
+        - { type: checklist, key: items, placeholder: "Add a task…" }

@@ -1,0 +1,76 @@
+schema: 1
+id: forge.system-monitor
+name: System Monitor
+version: 1.0.0
+author: WidgetForge
+description: CPU, memory, disk and network at a glance. Turn sections on or off.
+category: system
+icon: icon.svg
+
+window:
+  size: [280, 384]
+  min_size: [200, 160]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#6cf0c2"
+
+permissions:
+  system: [cpu, memory, disk, network, os]
+
+settings:
+  - { key: show_cpu, type: bool, label: CPU, default: true }
+  - { key: show_memory, type: bool, label: Memory, default: true }
+  - { key: show_disk, type: bool, label: Disk, default: true }
+  - { key: show_network, type: bool, label: Network, default: true }
+
+data:
+  sys: { source: system, interval: 1000 }
+
+ui:
+  blocks:
+    - type: column
+      gap: 10
+      children:
+        - type: row
+          gap: 10
+          children:
+            - type: gauge
+              label: CPU
+              value: "{{ sys.cpu.usage }}"
+              format: "{{ sys.cpu.usage | fixed(0) }}%"
+              visible: "{{ settings.show_cpu }}"
+            - type: gauge
+              label: RAM
+              value: "{{ sys.memory.usage }}"
+              format: "{{ sys.memory.usage | fixed(0) }}%"
+              color: "#b48cff"
+              visible: "{{ settings.show_memory }}"
+        - type: graph
+          label: CPU history
+          value: "{{ sys.cpu.usage }}"
+          max: 100
+          format: "{{ sys.cpu.count }} cores"
+          visible: "{{ settings.show_cpu }}"
+        - type: bar
+          label: "Memory"
+          value: "{{ sys.memory.used }}"
+          max: "{{ sys.memory.total }}"
+          format: "{{ sys.memory.used | bytes }} / {{ sys.memory.total | bytes }}"
+          color: "#b48cff"
+          visible: "{{ settings.show_memory }}"
+        - type: bar
+          label: "Disk {{ sys.disk.mount }}"
+          value: "{{ sys.disk.used }}"
+          max: "{{ sys.disk.total }}"
+          format: "{{ sys.disk.used | bytes(0) }} / {{ sys.disk.total | bytes(0) }}"
+          color: "#ffb86c"
+          visible: "{{ settings.show_disk }}"
+        - type: row
+          gap: 8
+          visible: "{{ settings.show_network }}"
+          children:
+            - { type: text, text: "↓ {{ sys.network.rx | rate }}", size: sm, mono: true }
+            - { type: text, text: "↑ {{ sys.network.tx | rate }}", size: sm, mono: true, align: right }
+        - { type: text, text: "{{ sys.os.hostname }} · up {{ sys.uptime | duration }}", size: xs, color: muted, align: center }

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WidgetForge",
+  "version": "0.1.0",
+  "identifier": "com.widgetforge.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "hub",
+        "title": "WidgetForge",
+        "url": "hub.html",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 860,
+        "minHeight": 560,
+        "center": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self' ipc: http://ipc.localhost",
+        "img-src": "'self' data: blob: widget: http://widget.localhost",
+        "frame-src": "widget: http://widget.localhost",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "shortDescription": "Desktop widgets for everyone",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../widgets/": "widgets/"
+    },
+    "fileAssociations": [
+      {
+        "ext": ["forgewidget"],
+        "name": "WidgetForge widget",
+        "description": "WidgetForge widget package",
+        "role": "Viewer"
+      }
+    ]
+  }
+}
