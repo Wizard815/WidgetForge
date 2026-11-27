@@ -1,0 +1,51 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.mail
+name: Mail
+version: 1.0.0
+author: WidgetForge
+description: Unread mail count and the latest senders and subjects, for any mailbox with IMAP. Gmail and iCloud need an app password. Read-only; nothing is marked as read.
+category: productivity
+
+window:
+  size: [300, 180]
+  min_size: [180, 70]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7cc4ff"
+
+permissions:
+  mail: true
+
+settings:
+  - { key: title, type: text, label: Name, default: Mail }
+  - { key: server, type: text, label: "IMAP server (e.g. imap.gmail.com)", default: "" }
+  - { key: port, type: number, label: Port, default: 993, min: 1, max: 65535 }
+  - { key: user, type: text, label: Email or user name, default: "" }
+  - { key: password, type: secret, label: Password or app password }
+  - { key: folder, type: text, label: Folder, default: INBOX }
+  - { key: preview, type: number, label: Latest unread shown, default: 3, min: 0, max: 10 }
+  - { key: open, type: text, label: "Web mail address to open (optional)", default: "" }
+  - { key: minutes, type: number, label: Check every (minutes), default: 5, min: 1, max: 120 }
+
+data:
+  mail: { source: mail, interval: "{{ settings.minutes | max(1) | mul(60000) }}" }
+
+ui:
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "{{ settings.title }}", weight: bold, clip: true }
+        - { type: text, text: "{{ mail.unread }} unread", align: right, weight: bold, color: "{{ mail.unread | choose('accent', 'muted') }}", visible: "{{ mail.ok }}" }
+    - { type: text, text: "Set the server, user and password in this widget's settings.", size: sm, color: muted, visible: "{{ mail.configured | eq(false) }}" }
+    - type: table
+      header: false
+      items: "{{ mail.latest }}"
+      row_open: "{{ settings.open }}"
+      columns:
+        - { value: "{{ row.from }}", width: 35%, color: muted }
+        - { value: "{{ row.subject }}" }
+    - { type: button, label: Open mail, open: "{{ settings.open }}", visible: "{{ settings.open }}" }

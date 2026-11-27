@@ -1,0 +1,57 @@
+schema: 1
+id: forge.hardware
+name: Hardware
+version: 1.0.0
+author: WidgetForge
+description: Graphics card load, memory and temperature, CPU temperature, and battery. Shows what this computer reports.
+category: system
+
+window:
+  size: [280, 260]
+  min_size: [200, 140]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#76e0ff"
+
+permissions:
+  system: [gpu, temperature, battery]
+
+data:
+  sys: { source: system, interval: 2000 }
+
+ui:
+  blocks:
+    - type: text
+      text: "{{ sys.gpu.name | default('Graphics card') }}"
+      weight: bold
+      clip: true
+      visible: "{{ sys.gpu.present }}"
+    - type: row
+      gap: 10
+      visible: "{{ sys.gpu.present }}"
+      children:
+        - { type: gauge, label: GPU, value: "{{ sys.gpu.usage }}", format: "{{ sys.gpu.usage | fixed(0) }}%", visible: "{{ sys.gpu.usage | eq(null) | not }}" }
+        - { type: gauge, label: VRAM, value: "{{ sys.gpu.memory_usage }}", format: "{{ sys.gpu.memory_usage | fixed(0) }}%", color: "#b48cff", visible: "{{ sys.gpu.memory_usage | eq(null) | not }}" }
+        - { type: gauge, label: GPU temp, value: "{{ sys.gpu.temperature }}", format: "{{ sys.gpu.temperature | fixed(0) }}°C", color: "#ffb86c", visible: "{{ sys.gpu.temperature | eq(null) | not }}" }
+    - type: text
+      text: "This computer does not report graphics card load or temperature."
+      size: xs
+      color: muted
+      visible: "{{ sys.gpu.usage | eq(null) | choose(sys.gpu.temperature | eq(null), false) }}"
+    - type: stat
+      label: CPU temperature
+      value: "{{ sys.temperature.cpu | fixed(0) }}°C"
+      visible: "{{ sys.temperature.cpu | eq(null) | not }}"
+    - type: bar
+      label: "Battery · {{ sys.battery.state }}"
+      value: "{{ sys.battery.percent }}"
+      format: "{{ sys.battery.percent | fixed(0) }}%"
+      color: "{{ sys.battery.charging | choose('good', 'accent') }}"
+      visible: "{{ sys.battery.present }}"
+    - type: text
+      text: "No battery."
+      size: xs
+      color: muted
+      visible: "{{ sys.battery.present | not }}"

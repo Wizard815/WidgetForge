@@ -1,0 +1,45 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.minecraft
+name: Minecraft Server
+version: 1.0.0
+author: WidgetForge
+description: Whether a Minecraft (Java edition) server is up, how many players are on and who, its version and message of the day.
+category: games
+
+window:
+  size: [280, 170]
+  min_size: [200, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7cd15b"
+
+permissions:
+  game: true
+
+settings:
+  - { key: server, type: text, label: "Server address (host or host:port)", default: "" }
+  - { key: seconds, type: number, label: Check every (seconds), default: 30, min: 5, max: 3600 }
+
+data:
+  mc: { source: minecraft, setting: server, interval: "{{ settings.seconds | max(5) | mul(1000) }}" }
+
+ui:
+  blocks:
+    - { type: text, text: "Type the server's address in this widget's settings.", size: sm, color: muted, visible: "{{ mc.configured | eq(false) }}" }
+    - type: row
+      visible: "{{ mc.configured }}"
+      children:
+        - { type: text, text: "{{ settings.server }}", weight: bold, clip: true }
+        - { type: text, text: "● {{ mc.online | choose('Online', 'Offline') }}", weight: bold, size: sm, align: right, color: "{{ mc.online | choose('good', 'bad') }}" }
+    - type: row
+      visible: "{{ mc.online }}"
+      children:
+        - { type: stat, label: Players, value: "{{ mc.players }} / {{ mc.max }}", size: xl }
+        - { type: stat, label: Version, value: "{{ mc.version }}", size: sm, align: right }
+    - { type: text, text: "{{ mc.motd }}", size: sm, color: muted, visible: "{{ mc.motd }}" }
+    - { type: text, text: "{{ mc.names | join(', ') }}", size: xs, visible: "{{ mc.names }}" }
+    - { type: text, text: "{{ mc.error }}", size: xs, color: muted, visible: "{{ mc.error }}" }

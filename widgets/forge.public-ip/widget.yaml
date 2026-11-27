@@ -1,0 +1,59 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.public-ip
+name: IP & VPN
+version: 1.0.0
+author: WidgetForge
+description: Your public IP address (from ipify, or icanhazip if ipify cannot be reached), this computer's local addresses, and whether a VPN — WireGuard, Tailscale, OpenVPN, ZeroTier — is connected.
+category: system
+
+window:
+  size: [280, 200]
+  min_size: [200, 100]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#6cf0c2"
+
+permissions:
+  network: [api.ipify.org, icanhazip.com]
+  system: [interfaces]
+  clipboard: true
+
+settings:
+  - { key: adapters, type: bool, label: Show network adapters, default: true }
+
+data:
+  ip:
+    source: net
+    url: https://api.ipify.org?format=json
+    interval: 300000
+  # Some ad blockers block ipify; then ask icanhazip instead.
+  ip2:
+    source: net
+    when: "{{ ip.ok | eq(false) }}"
+    url: https://icanhazip.com
+    interval: 300000
+  sys: { source: system, interval: 5000 }
+
+ui:
+  show_errors: false
+  blocks:
+    - type: row
+      children:
+        - { type: stat, label: Public IP, value: "{{ ip.json.ip | default(ip2.text | replace('\\s', '')) | default('–') }}", size: lg }
+        - type: text
+          align: right
+          weight: bold
+          text: "{{ sys.interfaces.vpn_up | choose('🔒 VPN on', '🔓 No VPN') }}"
+          color: "{{ sys.interfaces.vpn_up | choose('good', 'muted') }}"
+    - { type: text, text: "{{ sys.interfaces.vpns | pluck('vpn_kind') | join(', ') }} · {{ sys.interfaces.vpns | pluck('name') | join(', ') }}", size: xs, color: muted, visible: "{{ sys.interfaces.vpn_up }}" }
+    - { type: button, label: Copy public IP, copy: "{{ ip.json.ip | default(ip2.text | replace('\\s', '')) }}", visible: "{{ ip.json.ip | default(ip2.text) }}" }
+    - type: table
+      header: false
+      items: "{{ sys.interfaces.list | where('up') }}"
+      visible: "{{ settings.adapters }}"
+      columns:
+        - { value: "{{ row.vpn | choose('🔒 ', '') }}{{ row.name }}", width: 40% }
+        - { value: "{{ row.address }}", align: right, color: muted }

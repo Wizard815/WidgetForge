@@ -1,0 +1,65 @@
+# PLACEHOLDER wording: name, description, labels and status words.
+schema: 1
+id: forge.parcels
+name: Parcels
+version: 1.0.0
+author: WidgetForge
+description: Where your packages are, for most carriers worldwide, through Ship24. Needs your own Ship24 API key (their free plan tracks 10 parcels a month).
+category: info
+
+window:
+  size: [320, 220]
+  min_size: [220, 110]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ffb86b"
+
+permissions:
+  network: [api.ship24.com]
+
+settings:
+  - { key: parcels, type: lines, label: "Parcels, one per line (Name | tracking number)", placeholder: "New phone | 1Z999AA10123456784" }
+  - { key: api_key, type: secret, label: Ship24 API key }
+  - { key: hours, type: number, label: Check every (hours), default: 2, min: 1, max: 48 }
+
+data:
+  track:
+    source: net
+    when: "{{ settings.parcels }}"
+    for_each: "{{ settings.parcels | lines }}"
+    method: POST
+    url: https://api.ship24.com/public/v1/trackers/track
+    headers:
+      Authorization: "Bearer [[secret:api_key]]"
+      Content-Type: application/json
+    body:
+      trackingNumber: "{{ item | split('|') | slice(-1) | first }}"
+    interval: "{{ settings.hours | mul(3600000) }}"
+
+lookups:
+  milestone:
+    pending: Waiting for the carrier
+    info_received: Label created
+    in_transit: On the way
+    out_for_delivery: Out for delivery
+    failed_attempt: Delivery attempt failed
+    available_for_pickup: Ready to pick up
+    delivered: Delivered
+    exception: Problem
+    default: Unknown
+
+ui:
+  blocks:
+    - { type: text, text: "Add tracking numbers in this widget's settings.", size: sm, color: muted, visible: "{{ settings.parcels | not }}" }
+    - type: table
+      header: false
+      items: "{{ track.items }}"
+      row_title: "{{ row.json.data.trackings[0].events[0].status }}"
+      columns:
+        - { value: "{{ row.item | split('|') | first }}", width: 38% }
+        - value: "{{ row.ok | choose(row.json.data.trackings[0].shipment.statusMilestone | lookup('milestone'), row.error) }}"
+          color: "{{ row.json.data.trackings[0].shipment.statusMilestone | eq('delivered') | choose('good', 'inherit') }}"
+        - { value: "{{ row.json.data.trackings[0].events[0].occurrenceDatetime | ago }}", width: 22%, align: right, color: muted }
+    - { type: text, text: "Tracking by Ship24", size: xs, color: muted, align: right }

@@ -1,0 +1,48 @@
+schema: 1
+id: forge.network
+name: Network
+version: 1.0.0
+author: WidgetForge
+description: Download and upload speed graphs, plus how long it takes to reach a server (latency), checked every few seconds.
+category: system
+
+window:
+  size: [280, 300]
+  min_size: [200, 160]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#5ad1ff"
+
+permissions:
+  system: [network]
+  latency: true
+
+settings:
+  - { key: host, type: text, label: Latency check address, default: "1.1.1.1" }
+  - { key: port, type: number, label: Port, default: 443, min: 1, max: 65535 }
+
+data:
+  sys: { source: system, interval: 1000 }
+  lat: { source: latency, host: "{{ settings.host }}", port: "{{ settings.port }}", interval: 3000 }
+
+ui:
+  blocks:
+    - type: graph
+      label: "↓ Download"
+      value: "{{ sys.network.rx }}"
+      max: auto
+      format: "{{ sys.network.rx | rate }}"
+    - type: graph
+      label: "↑ Upload"
+      value: "{{ sys.network.tx }}"
+      max: auto
+      format: "{{ sys.network.tx | rate }}"
+      color: "#b48cff"
+    - type: graph
+      label: "Latency to {{ settings.host }}"
+      value: "{{ lat.ms | default(0) }}"
+      max: auto
+      format: "{{ lat.ok | choose(lat.ms | fixed(0), 'unreachable') }}{{ lat.ok | choose(' ms', '') }}"
+      color: "{{ lat.ok | choose('#7ee081', '#ff8080') }}"

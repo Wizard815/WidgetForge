@@ -13,17 +13,24 @@ Windows first, with macOS and Linux from the same code.
 - **Widgets as their own windows**: frameless and transparent, draggable and resizable, with
   a hover toolbar (close, settings, layer, lock).
 - **Layers**: always on top, normal, or pinned to the desktop behind everything.
-- **Shapes**: a floating tile, or an edge drawer that hides at a screen edge and slides out.
-- **Startup**: optional sign-in launch (Windows registry, macOS login item, XDG autostart).
+- **Shapes**: a floating tile, or an edge drawer that hides at a screen edge as a small handle
+  and slides out on hover or click (pin it to keep it open; drag the handle along the edge).
+- **Startup**: optional sign-in launch (Hub → Settings; Windows registry, macOS login item, XDG autostart).
   It starts in the tray and opens only the widgets marked "Start with WidgetForge", at
   their saved positions. Steam is not needed.
 - **Tray icon** with show/hide all, and single-instance behaviour.
+- **Builder** (Hub → Builder): make a widget without writing YAML — blocks, live preview with
+  real data, a value picker; saves a normal `widget.yaml` add-on.
+- **Theme** (Hub → Theme): one look for every widget (presets, colours, see-through, corners,
+  font, size), and per-widget frame, see-through and accent (Desktop → Settings → Look).
 - **Widget format**: `widget.yaml` with declarative blocks and live bindings, or an HTML/JS
   entry point running in a sandboxed iframe with a small SDK.
 - **Permissions**: system stats, network hosts and storage are declared in the manifest
   and enforced in Rust.
 - **Packages**: import and export `.forgewidget` files (zip), or drop folders into the
   add-ons folder. Updates that ask for new permissions are flagged before installing.
+- **Browse** (Hub → Browse): install and update widgets from a community catalog. The catalog
+  repository is ready in `registry-template/` but not published yet.
 - **Built-in widgets**: Clock, System Monitor, Sticky Notes, To-do, Quick Links, and Day
   Progress (an HTML/JS example).
 
@@ -64,6 +71,8 @@ an in-memory mock backend. To preview a single widget, open
 `/widget.html?mock=forge.system-monitor`.
 
 ## Make a widget
+
+The easy way: Hub → Builder. By hand:
 
 Create a folder in the add-ons folder (Hub → Add-ons → Open folder) with a `widget.yaml`:
 

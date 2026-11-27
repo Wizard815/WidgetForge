@@ -1,0 +1,63 @@
+schema: 1
+id: forge.countdown
+name: Countdown
+version: 1.0.0
+author: WidgetForge
+description: Days until a date — a trip, a release, a birthday (repeats every year if you like).
+category: time
+
+window:
+  size: [230, 170]
+  min_size: [160, 110]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ffb86c"
+
+settings:
+  - { key: title, type: text, label: What, default: "" }
+  - { key: date, type: datetime, label: When, default: "" }
+  - { key: yearly, type: bool, label: Every year (birthdays), default: false }
+
+data:
+  now: { source: clock, interval: 1000 }
+
+ui:
+  blocks:
+    - type: text
+      text: "Set a name and date in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ settings.date | not }}"
+    - type: column
+      gap: 2
+      visible: "{{ settings.date }}"
+      children:
+        - { type: text, text: "{{ settings.title }}", weight: bold, align: center, clip: true }
+        - type: text
+          text: "{{ settings.date | days_until(settings.yearly) | max(0) }}"
+          size: xxl
+          weight: bold
+          align: center
+          color: accent
+        - type: text
+          text: "{{ settings.date | days_until(settings.yearly) | eq(1) | choose('day to go', 'days to go') }}"
+          size: sm
+          align: center
+          color: muted
+          visible: "{{ settings.date | countdown(settings.yearly) }}"
+        - type: text
+          text: "{{ settings.date | countdown(settings.yearly) }}"
+          size: xs
+          align: center
+          mono: true
+          visible: "{{ settings.date | countdown(settings.yearly) }}"
+        - type: text
+          text: "It's here!"
+          size: lg
+          align: center
+          weight: bold
+          visible: "{{ settings.date | countdown(settings.yearly) | not }}"
+        - { type: text, text: "{{ settings.date | date('ddd D MMM YYYY') }}", size: xs, align: center, color: muted, visible: "{{ settings.yearly | not }}" }

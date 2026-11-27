@@ -1,0 +1,49 @@
+schema: 1
+id: forge.media
+name: Now Playing
+version: 1.0.0
+author: WidgetForge
+description: Shows what is playing in any player and controls it. Linux now; Windows and macOS are planned.
+category: media
+
+window:
+  size: [300, 150]
+  min_size: [220, 120]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ff6cb0"
+
+permissions:
+  media: true
+
+data:
+  media: { source: media, interval: 1000 }
+
+ui:
+  blocks:
+    - type: text
+      text: "Nothing is playing."
+      color: muted
+      size: sm
+      visible: "{{ media.available | not }}"
+    - type: column
+      gap: 6
+      visible: "{{ media.available }}"
+      children:
+        - { type: text, text: "{{ media.title | default('Unknown title') }}", weight: bold, clip: true }
+        - { type: text, text: "{{ media.artist }}{{ media.album | choose(' · ', '') }}{{ media.album }}", size: sm, color: muted, clip: true }
+        - type: bar
+          label: "{{ media.player }}"
+          value: "{{ media.position }}"
+          max: "{{ media.length }}"
+          format: "{{ media.position | duration_clock }} / {{ media.length | duration_clock }}"
+          visible: "{{ media.length }}"
+        - type: grid
+          columns: 3
+          gap: 6
+          children:
+            - { type: button, label: "⏮", action: media.previous }
+            - { type: button, label: "{{ media.playing | choose('❚❚', '▶') }}", action: media.play_pause }
+            - { type: button, label: "⏭", action: media.next }

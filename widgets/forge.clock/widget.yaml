@@ -3,7 +3,7 @@ id: forge.clock
 name: Clock
 version: 1.0.0
 author: WidgetForge
-description: Analog or digital clock with the date. Add more for world clocks.
+description: Analog or digital clock with the date. Pick a time zone to make it a world clock; add one per city.
 category: time
 icon: icon.svg
 
@@ -19,19 +19,20 @@ style:
 
 settings:
   - { key: label, type: text, label: Label (e.g. city), default: "" }
+  - { key: timezone, type: timezone, label: Time zone (empty = this computer), default: "" }
   - { key: analog, type: bool, label: Analog face, default: true }
   - { key: seconds, type: bool, label: Show seconds, default: true }
   - { key: h24, type: bool, label: 24-hour time, default: true }
 
 data:
-  now: { source: clock, interval: 1000 }
+  now: { source: clock, interval: 1000, timezone: "{{ settings.timezone }}" }
 
 ui:
   blocks:
     - type: column
       gap: 6
       children:
-        - { type: clock, seconds: "{{ settings.seconds }}", visible: "{{ settings.analog }}" }
+        - { type: clock, seconds: "{{ settings.seconds }}", timezone: "{{ settings.timezone }}", visible: "{{ settings.analog }}" }
         - type: text
           text: "{{ now.now | time('HH:mm') }}"
           size: xxl
@@ -45,4 +46,9 @@ ui:
           align: center
           visible: "{{ settings.h24 | not }}"
         - { type: text, text: "{{ now.now | date('dddd, MMMM D') }}", size: sm, align: center, color: muted }
-        - { type: text, text: "{{ settings.label }}", size: xs, align: center, color: accent, visible: "{{ settings.label }}" }
+        - type: text
+          text: "{{ settings.label | default(settings.timezone) }}{{ settings.timezone | choose(' · ', '') }}{{ settings.timezone | zone_offset(settings.timezone) }}"
+          size: xs
+          align: center
+          color: accent
+          visible: "{{ settings.label | choose(true, settings.timezone) }}"

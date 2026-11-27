@@ -1,0 +1,69 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.markets
+name: Prices
+version: 1.0.0
+author: WidgetForge
+description: A watchlist of crypto prices (CoinGecko) and stock prices (Finnhub, needs your own free key) with today's change. For information only.
+category: info
+
+window:
+  size: [280, 230]
+  min_size: [200, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#6cf0c2"
+
+permissions:
+  network: [api.coingecko.com, finnhub.io]
+
+settings:
+  - { key: coins, type: text, label: "Coins (CoinGecko ids, e.g. bitcoin, ethereum)", default: "bitcoin, ethereum" }
+  - { key: currency, type: text, label: Coin price currency, default: usd }
+  - { key: coingecko_key, type: secret, label: CoinGecko demo key (optional) }
+  - { key: stocks, type: text, label: "Stocks (symbols, e.g. AAPL, MSFT)", default: "" }
+  - { key: finnhub_key, type: secret, label: Finnhub API key (for stocks) }
+  - { key: minutes, type: number, label: Check every (minutes), default: 5, min: 1, max: 240 }
+
+data:
+  coins:
+    source: net
+    when: "{{ settings.coins }}"
+    url: "https://api.coingecko.com/api/v3/simple/price?ids={{ settings.coins | replace(' ', '') | url }}&vs_currencies={{ settings.currency | url }}&include_24hr_change=true"
+    headers:
+      x-cg-demo-api-key: "[[secret:coingecko_key]]"
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+  stocks:
+    source: net
+    when: "{{ settings.stocks }}"
+    for_each: "{{ settings.stocks | split(',') }}"
+    url: "https://finnhub.io/api/v1/quote?symbol={{ item | upper | url }}"
+    headers:
+      X-Finnhub-Token: "[[secret:finnhub_key]]"
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+
+ui:
+  blocks:
+    - type: table
+      header: false
+      items: "{{ coins.json | entries }}"
+      visible: "{{ settings.coins }}"
+      columns:
+        - { value: "{{ row.key }}", width: 40% }
+        - { value: "{{ row.value | get(settings.currency) | number(2) }} {{ settings.currency | upper }}", align: right }
+        - value: "{{ row.value | get(settings.currency, '_24h_change') | signed(1) }}%"
+          width: 22%
+          align: right
+          color: "{{ row.value | get(settings.currency, '_24h_change') | trend }}"
+    - type: table
+      header: false
+      items: "{{ stocks.items }}"
+      visible: "{{ settings.stocks }}"
+      columns:
+        - { value: "{{ row.item | upper }}", width: 40% }
+        - { value: "{{ row.ok | choose(row.json.c | number(2), row.error) }}", align: right }
+        - { value: "{{ row.json.dp | signed(2) }}%", width: 22%, align: right, color: "{{ row.json.dp | trend }}" }
+    - { type: text, text: "Powered by CoinGecko", size: xs, color: muted, align: right, visible: "{{ settings.coins }}" }

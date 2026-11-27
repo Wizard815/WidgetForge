@@ -1,0 +1,38 @@
+schema: 1
+id: forge.timer
+name: Timer
+version: 1.0.0
+author: WidgetForge
+description: Countdown, stopwatch, or Pomodoro focus timer. Keeps running when closed.
+category: time
+
+window:
+  size: [220, 170]
+  min_size: [170, 130]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ff7a7a"
+
+permissions:
+  storage: true
+
+settings:
+  - { key: label, type: text, label: Label, default: "" }
+  - { key: mode, type: choice, label: Mode, default: pomodoro, options: [pomodoro, countdown, stopwatch] }
+  - { key: minutes, type: number, label: Countdown minutes, default: 10, min: 1, max: 1440 }
+  - { key: work, type: number, label: Focus minutes, default: 25, min: 1, max: 180 }
+  - { key: rest, type: number, label: Break minutes, default: 5, min: 1, max: 60 }
+  - { key: long_rest, type: number, label: Long break minutes (every 4th), default: 15, min: 1, max: 120 }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.label }}", size: sm, align: center, color: muted, visible: "{{ settings.label }}" }
+    - type: timer
+      mode: "{{ settings.mode }}"
+      minutes: "{{ settings.minutes }}"
+      work: "{{ settings.work }}"
+      rest: "{{ settings.rest }}"
+      long_rest: "{{ settings.long_rest }}"

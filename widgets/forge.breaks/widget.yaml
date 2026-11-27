@@ -1,0 +1,40 @@
+# PLACEHOLDER wording: name, description, labels and reminder messages.
+schema: 1
+id: forge.breaks
+name: Break Reminders
+version: 1.0.0
+author: WidgetForge
+description: Gentle reminders to drink water, stretch, and rest your eyes (the 20-20-20 rule). Lights up, plays a soft tone and can send a desktop notification.
+category: productivity
+
+window:
+  size: [260, 200]
+  min_size: [200, 100]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#6cd4ff"
+
+permissions:
+  notify: true
+
+settings:
+  - { key: water, type: bool, label: Drink water, default: true }
+  - { key: water_minutes, type: number, label: Water every (minutes), default: 45, min: 5, max: 480 }
+  - { key: stretch, type: bool, label: Stand and stretch, default: true }
+  - { key: stretch_minutes, type: number, label: Stretch every (minutes), default: 60, min: 5, max: 480 }
+  - { key: eyes, type: bool, label: Rest your eyes, default: true }
+  - { key: eyes_minutes, type: number, label: Eyes every (minutes), default: 20, min: 5, max: 480 }
+  - { key: sound, type: bool, label: Play a tone, default: true }
+  - { key: notify, type: bool, label: Desktop notification, default: true }
+
+ui:
+  blocks:
+    - type: reminders
+      sound: "{{ settings.sound }}"
+      notify: "{{ settings.notify }}"
+      list:
+        - { name: "{{ settings.water | choose('Water', '') }}", minutes: "{{ settings.water_minutes }}", message: "Time for a glass of water." }
+        - { name: "{{ settings.stretch | choose('Stretch', '') }}", minutes: "{{ settings.stretch_minutes }}", message: "Stand up and stretch for a minute." }
+        - { name: "{{ settings.eyes | choose('Eyes', '') }}", minutes: "{{ settings.eyes_minutes }}", message: "Look at something 20 feet away for 20 seconds." }

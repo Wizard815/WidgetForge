@@ -1,0 +1,41 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.speed-test
+name: Speed Test
+version: 1.0.0
+author: WidgetForge
+description: Measures your download and upload speed on a schedule and keeps a history chart. Uses your own LibreSpeed server (free and open source), so no outside service is involved.
+category: system
+
+window:
+  size: [300, 210]
+  min_size: [220, 140]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#6cb4ff"
+
+permissions:
+  network: ["setting:server"]
+  storage: true
+
+settings:
+  - { key: server, type: text, label: "LibreSpeed server address (e.g. http://server:8080)", default: "" }
+  - { key: hours, type: number, label: Test every (hours), default: 3, min: 1, max: 48 }
+
+data:
+  speed: { source: speedtest, interval: "{{ settings.hours | max(1) | mul(3600000) }}" }
+
+ui:
+  blocks:
+    - { type: text, text: "Set your LibreSpeed server in this widget's settings.", size: sm, color: muted, visible: "{{ speed.configured | eq(false) }}" }
+    - type: grid
+      columns: 3
+      visible: "{{ speed.last }}"
+      children:
+        - { type: stat, label: Download, value: "{{ speed.last.down | fixed(0) }}", note: Mbit/s, size: lg }
+        - { type: stat, label: Upload, value: "{{ speed.last.up | eq(null) | choose('–', speed.last.up | fixed(0)) }}", note: Mbit/s, size: lg }
+        - { type: stat, label: Ping, value: "{{ speed.last.ms | fixed(0) }}", note: ms, size: lg }
+    - { type: chart, items: "{{ speed.history }}", value: down, second: up, label: "Download / upload", format: "{{ speed.last.at | ago }}", visible: "{{ speed.history }}" }
+    - { type: button, label: Test now, action: fetch.speed, visible: "{{ settings.server }}" }

@@ -1,0 +1,55 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.commute
+name: Departures
+version: 1.0.0
+author: WidgetForge
+description: The next buses, trams and trains from a stop, with live delays where the operator shares them. Uses a MOTIS transit server (open source; run your own or use one you have permission for).
+category: info
+
+window:
+  size: [320, 240]
+  min_size: [220, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ffd166"
+
+permissions:
+  network: ["setting:server"]
+
+settings:
+  - { key: server, type: text, label: "MOTIS server address (e.g. http://server:8080)", default: "" }
+  - { key: stop, type: text, label: Stop or station name, default: "" }
+  - { key: count, type: number, label: Departures shown, default: 6, min: 1, max: 20 }
+
+data:
+  place:
+    source: net
+    when: "{{ settings.stop }}"
+    url: "{{ settings.server }}/api/v1/geocode?type=STOP&text={{ settings.stop | url }}"
+    interval: 86400000
+  dep:
+    source: net
+    when: "{{ place.json[0].id }}"
+    url: "{{ settings.server }}/api/v1/stoptimes?stopId={{ place.json[0].id | url }}&n={{ settings.count }}"
+    interval: 60000
+
+ui:
+  blocks:
+    - { type: text, text: "Set the server and your stop in this widget's settings.", size: sm, color: muted, visible: "{{ settings.server | not }}" }
+    - { type: text, text: "{{ place.json[0].name | default(settings.stop) }}", weight: bold, clip: true, visible: "{{ settings.stop }}" }
+    - type: table
+      header: false
+      items: "{{ dep.json.stopTimes }}"
+      empty: "No departures found."
+      columns:
+        - { value: "{{ row.routeShortName | default(row.mode) }}", width: 18%, color: accent }
+        - { value: "{{ row.headsign }}" }
+        - value: "{{ row.cancelled | choose('Cancelled', row.place.departure | parse | time) }}"
+          width: 20%
+          align: right
+          color: "{{ row.cancelled | choose('bad', row.realTime | choose('good', 'inherit')) }}"
+        - { value: "{{ row.place.departure | ago }}", width: 22%, align: right, color: muted }

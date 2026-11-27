@@ -1,0 +1,46 @@
+schema: 1
+id: forge.photos
+name: Photo Frame
+version: 1.0.0
+author: WidgetForge
+description: A slideshow of the pictures in a folder you choose (and its subfolders). Nothing leaves your computer.
+category: media
+
+window:
+  size: [320, 240]
+  min_size: [140, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: solid
+  accent: "#ffffff"
+
+permissions:
+  folders: ["setting:folder"]
+
+settings:
+  - { key: folder, type: folder, label: Picture folder, default: "" }
+  - { key: seconds, type: number, label: Seconds per picture, default: 10, min: 2, max: 3600 }
+  - { key: shuffle, type: bool, label: Shuffle, default: true }
+  - { key: fit, type: choice, label: Fit, default: cover, options: [cover, contain] }
+  - { key: captions, type: bool, label: Show file names, default: false }
+
+data:
+  pics: { source: folder, setting: folder, interval: 600000 }
+
+ui:
+  blocks:
+    - type: text
+      text: "Choose a picture folder in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ settings.folder | not }}"
+    - type: slideshow
+      visible: "{{ settings.folder }}"
+      images: "{{ pics.files }}"
+      seconds: "{{ settings.seconds }}"
+      shuffle: "{{ settings.shuffle }}"
+      fit: "{{ settings.fit }}"
+      captions: "{{ settings.captions }}"
+      empty: "No pictures in this folder."

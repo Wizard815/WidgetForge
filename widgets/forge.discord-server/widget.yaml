@@ -1,0 +1,80 @@
+schema: 1
+id: forge.discord-server
+name: Discord Server
+version: 1.0.0
+author: WidgetForge
+description: Who is online in a Discord server, its voice channels, and a join button. No account or key needed; the server must turn on Server Settings → Widget.
+category: social
+
+window:
+  size: [280, 340]
+  min_size: [200, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#8c9eff"
+
+permissions:
+  network: [discord.com]
+
+settings:
+  - { key: server_id, type: text, label: Server ID (Server Settings → Widget), default: "" }
+  - { key: show_members, type: bool, label: Show online members, default: true }
+  - { key: show_voice, type: bool, label: Show voice channels, default: true }
+  - { key: rows, type: number, label: Members shown, default: 12, min: 1, max: 99 }
+
+data:
+  server:
+    source: net
+    when: "{{ settings.server_id }}"
+    url: "https://discord.com/api/guilds/{{ settings.server_id | url }}/widget.json"
+    interval: 60000
+
+# Status dot colours (names understood by the widget host).
+lookups:
+  status:
+    online: good
+    idle: warn
+    dnd: bad
+    default: muted
+
+ui:
+  show_errors: false
+  blocks:
+    - type: text
+      text: "Paste the server ID in this widget's settings. The server needs Server Settings → Widget → Enable Server Widget."
+      size: sm
+      color: muted
+      visible: "{{ settings.server_id | not }}"
+    - type: text
+      text: "{{ server.json.message | default(server.error) }}{{ server.json.code | eq(50004) | choose(' — ask an admin to enable Server Settings → Widget.', '') }}"
+      size: sm
+      color: bad
+      visible: "{{ server.ok | not | choose(server, false) }}"
+    - type: column
+      gap: 8
+      visible: "{{ server.ok }}"
+      children:
+        - type: row
+          children:
+            - { type: text, text: "{{ server.json.name }}", weight: bold, clip: true }
+            - { type: text, text: "● {{ server.json.presence_count }} online", size: sm, color: good, align: right }
+        - type: table
+          visible: "{{ settings.show_voice | choose(server.json.channels | count, false) }}"
+          header: false
+          items: "{{ server.json.channels }}"
+          columns:
+            - { value: "🔊 {{ row.name }}", color: muted }
+        - type: table
+          visible: "{{ settings.show_members }}"
+          header: false
+          items: "{{ server.json.members }}"
+          limit: "{{ settings.rows }}"
+          empty: "Nobody is online."
+          columns:
+            - { value: "●", width: 8%, color: "{{ row.status | lookup('status') }}" }
+            - { value: "{{ row.username }}" }
+            - { value: "{{ row.activity.name }}", width: 42%, color: muted, align: right }
+        - { type: button, label: Join server, open: "{{ server.json.instant_invite }}", visible: "{{ server.json.instant_invite }}" }

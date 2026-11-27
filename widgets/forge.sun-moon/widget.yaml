@@ -1,0 +1,65 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.sun-moon
+name: Sun & Moon
+version: 1.0.0
+author: WidgetForge
+description: Sunrise, sunset, day length and golden hour for your city (in its own time), and tonight's moon phase. Worked out on this computer; only the city lookup goes online (Open-Meteo).
+category: info
+
+window:
+  size: [260, 230]
+  min_size: [200, 150]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ffb45c"
+
+permissions:
+  network: [geocoding-api.open-meteo.com]
+
+settings:
+  - { key: city, type: text, label: City, default: London }
+  - { key: clock, type: choice, label: Time style, default: "HH:mm", options: ["HH:mm", "h:mm A"] }
+
+data:
+  geo:
+    source: net
+    url: "https://geocoding-api.open-meteo.com/v1/search?count=1&name={{ settings.city | url }}"
+    interval: 86400000
+  sky:
+    source: sun
+    when: "{{ geo.json.results }}"
+    lat: "{{ geo.json.results[0].latitude }}"
+    lon: "{{ geo.json.results[0].longitude }}"
+    interval: 60000
+
+ui:
+  blocks:
+    - { type: text, text: "{{ geo.json.results[0].name | default(settings.city) }}", weight: bold, clip: true }
+    - type: grid
+      columns: 2
+      children:
+        - { type: stat, label: Sunrise, value: "{{ sky.sunrise | zone(geo.json.results[0].timezone) | time(settings.clock) | default('–') }}", size: lg }
+        - { type: stat, label: Sunset, value: "{{ sky.sunset | zone(geo.json.results[0].timezone) | time(settings.clock) | default('–') }}", size: lg }
+    - type: text
+      size: sm
+      color: muted
+      text: "Day {{ sky.day_length | hm }} ({{ sky.day_change | div(60) | signed(1) }} min) · golden hour {{ sky.golden_evening | zone(geo.json.results[0].timezone) | time(settings.clock) }}"
+      visible: "{{ sky.sunrise }}"
+    - { type: text, size: sm, color: muted, text: "Polar {{ sky.polar }} today", visible: "{{ sky.polar }}" }
+    - type: text
+      size: sm
+      text: "{{ sky.sun_up | choose('☀ Sun sets ', '☾ Sun rises ') }}{{ sky.next | ago }}"
+      visible: "{{ sky.next }}"
+    - { type: divider }
+    - type: row
+      children:
+        - { type: text, text: "{{ sky.moon.symbol }}", size: xxl }
+        - type: column
+          gap: 2
+          children:
+            - { type: text, text: "{{ sky.moon.name }}", weight: bold }
+            - { type: text, text: "{{ sky.moon.illumination | fixed(0) }}% lit · full {{ sky.moon.next_full | date('MMM D') }}", size: xs, color: muted }

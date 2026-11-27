@@ -1,0 +1,46 @@
+schema: 1
+id: forge.rss
+name: News Feed
+version: 1.0.0
+author: WidgetForge
+description: Headlines from any RSS or Atom feed. Click a headline to open it.
+category: info
+
+window:
+  size: [320, 300]
+  min_size: [200, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ffa94d"
+
+permissions:
+  network: ["setting:feed_url"]
+
+settings:
+  - { key: feed_url, type: text, label: Feed link (RSS or Atom), default: "https://hnrss.org/frontpage" }
+  - { key: rows, type: number, label: Headlines shown, default: 8, min: 1, max: 30 }
+  - { key: minutes, type: number, label: Refresh every (minutes), default: 15, min: 5, max: 1440 }
+
+data:
+  feed:
+    source: net
+    format: rss
+    url: "{{ settings.feed_url }}"
+    interval: "{{ settings.minutes | mul(60000) }}"
+
+ui:
+  blocks:
+    - { type: text, text: "{{ feed.title | default('News') }}", weight: bold, clip: true }
+    - type: table
+      header: false
+      items: "{{ feed.items }}"
+      limit: "{{ settings.rows }}"
+      empty: "No headlines yet."
+      row_open: "{{ row.link }}"
+      row_title: "{{ row.title }}"
+      columns:
+        - { value: "{{ row.title }}" }
+        - { value: "{{ row.date | time('HH:mm') }}", width: 18%, align: right, color: muted }

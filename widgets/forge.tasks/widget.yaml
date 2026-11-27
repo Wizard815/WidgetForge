@@ -1,0 +1,107 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.tasks
+name: Tasks
+version: 1.0.0
+author: WidgetForge
+description: Your open tasks from Todoist (today and overdue, with a tick to finish them), Linear (assigned to you) or Jira (assigned to you, not done).
+category: productivity
+
+window:
+  size: [320, 240]
+  min_size: [200, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#e44332"
+
+permissions:
+  network: [api.todoist.com, api.linear.app, "setting:jira_url"]
+
+settings:
+  - { key: app, type: choice, label: Service, default: todoist, options: [todoist, linear, jira] }
+  - { key: token, type: secret, label: "API token (Todoist: Settings → Integrations; Linear: personal API key; Jira: API token)" }
+  - { key: filter, type: text, label: Todoist filter, default: "today | overdue" }
+  - { key: jira_url, type: text, label: "Jira address (e.g. https://yourteam.atlassian.net)", default: "" }
+  - { key: jira_email, type: text, label: Jira account email, default: "" }
+  - { key: minutes, type: number, label: Check every (minutes), default: 5, min: 1, max: 120 }
+
+data:
+  todoist:
+    source: net
+    when: "{{ settings.app | eq('todoist') }}"
+    url: "https://api.todoist.com/api/v1/tasks/filter?limit=50&query={{ settings.filter | url }}"
+    headers: { Authorization: "Bearer [[secret:token]]" }
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+  close:
+    source: net
+    manual: true
+    method: POST
+    url: "https://api.todoist.com/api/v1/tasks/{{ arg }}/close"
+    headers: { Authorization: "Bearer [[secret:token]]" }
+  linear:
+    source: net
+    when: "{{ settings.app | eq('linear') }}"
+    method: POST
+    url: https://api.linear.app/graphql
+    headers: { Authorization: "[[secret:token]]", Content-Type: application/json }
+    body:
+      query: '{ viewer { assignedIssues(first: 30, filter: { state: { type: { nin: ["completed", "canceled"] } } }) { nodes { identifier title url state { name } } } } }'
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+  jira:
+    source: net
+    when: "{{ settings.app | eq('jira') | choose(settings.jira_url, false) }}"
+    url: "{{ settings.jira_url }}/rest/api/3/search/jql?maxResults=30&fields=summary,status&jql={{ 'assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC' | url }}"
+    headers: { Authorization: "Basic [[basic:jira_email:token]]", Accept: application/json }
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+
+lookups:
+  priority:
+    "4": "P1"
+    "3": "P2"
+    "2": "P3"
+    default: ""
+
+ui:
+  show_errors: false
+  blocks:
+    - type: text
+      text: "Add your API token in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ todoist.status | among(401, 403) | choose(true, linear.status | among(400, 401)) | choose(true, jira.status | among(401, 403)) }}"
+    - { type: text, text: "{{ todoist.error }}{{ linear.error }}{{ jira.error }}", size: xs, color: bad, visible: "{{ todoist.status | among(0, 500, 502, 503) | choose(true, jira.status | eq(404)) }}" }
+    - type: table
+      header: false
+      items: "{{ todoist.json.results }}"
+      visible: "{{ settings.app | eq('todoist') | choose(todoist.ok, false) }}"
+      empty: "Nothing due. Nice."
+      columns:
+        - width: 12%
+          actions:
+            - { label: "✓", action: fetch.close, arg: "{{ row.id }}", title: Mark as done }
+        - { value: "{{ row.content }}" }
+        - { value: "{{ row.priority | lookup('priority') }}", width: 10%, color: "{{ row.priority | gte(3) | choose('bad', 'muted') }}" }
+        - { value: "{{ row.due.date | date('MMM D') }}", width: 18%, align: right, color: muted }
+    - type: table
+      header: false
+      items: "{{ linear.json.data.viewer.assignedIssues.nodes }}"
+      visible: "{{ settings.app | eq('linear') | choose(linear.json.data, false) }}"
+      empty: "No open issues."
+      row_open: "{{ row.url }}"
+      columns:
+        - { value: "{{ row.identifier }}", width: 22%, color: accent }
+        - { value: "{{ row.title }}" }
+        - { value: "{{ row.state.name }}", width: 24%, align: right, color: muted }
+    - type: table
+      header: false
+      items: "{{ jira.json.issues }}"
+      visible: "{{ settings.app | eq('jira') | choose(jira.ok, false) }}"
+      empty: "No open issues."
+      row_open: "{{ settings.jira_url }}/browse/{{ row.key }}"
+      columns:
+        - { value: "{{ row.key }}", width: 22%, color: accent }
+        - { value: "{{ row.fields.summary }}" }
+        - { value: "{{ row.fields.status.name }}", width: 24%, align: right, color: muted }

@@ -1,0 +1,20 @@
+schema: 1
+id: forge.calculator
+name: Calculator
+version: 1.0.0
+author: WidgetForge
+description: A calculator. Type or click; Enter for the answer.
+category: productivity
+
+window:
+  size: [230, 330]
+  min_size: [190, 280]
+  layer: normal
+
+style:
+  theme: glass
+  accent: "#7cc4ff"
+
+ui:
+  blocks:
+    - { type: calculator }

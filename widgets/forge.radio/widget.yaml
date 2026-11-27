@@ -1,0 +1,25 @@
+# PLACEHOLDER wording: name and description.
+schema: 1
+id: forge.radio
+name: Internet Radio
+version: 1.0.0
+author: WidgetForge
+description: Search thousands of radio stations from the free Radio Browser directory, star your favourites, and listen.
+category: media
+
+window:
+  size: [300, 300]
+  min_size: [220, 160]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ff6b9a"
+
+permissions:
+  storage: true
+  network: [de1.api.radio-browser.info, de2.api.radio-browser.info, fi1.api.radio-browser.info]
+
+ui:
+  blocks:
+    - { type: radio }

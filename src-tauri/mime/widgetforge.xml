@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tells Linux desktops that *.forgewidget files are WidgetForge widget packages. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-forgewidget">
+    <comment>WidgetForge widget</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.forgewidget"/>
+  </mime-type>
+</mime-info>

@@ -1,0 +1,78 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.glances
+name: Server Stats
+version: 1.0.0
+author: WidgetForge
+description: CPU, memory, swap, disks and uptime of another computer or server running Glances in web-server mode (glances -w). Add one per server.
+category: system
+
+window:
+  size: [280, 230]
+  min_size: [200, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7cc4ff"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: url, type: text, label: "Glances address (e.g. http://server:61208)", default: "" }
+  - { key: version, type: choice, label: Glances version, default: "4", options: ["4", "3"] }
+  - { key: user, type: text, label: User name (if password protected), default: "" }
+  - { key: password, type: secret, label: Password }
+  - { key: seconds, type: number, label: Check every (seconds), default: 5, min: 2, max: 600 }
+
+data:
+  quick:
+    source: net
+    when: "{{ settings.url }}"
+    url: "{{ settings.url }}/api/{{ settings.version }}/quicklook"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: "{{ settings.seconds | max(2) | mul(1000) }}"
+  fs:
+    source: net
+    when: "{{ settings.url }}"
+    url: "{{ settings.url }}/api/{{ settings.version }}/fs"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: 60000
+  info:
+    source: net
+    when: "{{ settings.url }}"
+    url: "{{ settings.url }}/api/{{ settings.version }}/system"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: 3600000
+  up:
+    source: net
+    when: "{{ settings.url }}"
+    url: "{{ settings.url }}/api/{{ settings.version }}/uptime"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: 60000
+
+ui:
+  blocks:
+    - { type: text, text: "Type the Glances address in this widget's settings.", size: sm, color: muted, visible: "{{ settings.url | not }}" }
+    - type: row
+      visible: "{{ settings.url }}"
+      children:
+        - { type: text, text: "{{ info.json.hostname | default('Server') }}", weight: bold, clip: true }
+        - { type: text, text: "up {{ up.json | default(up.text) | replace('\"', '') }}", size: xs, color: muted, align: right, clip: true }
+    - type: grid
+      columns: 3
+      visible: "{{ quick.json }}"
+      children:
+        - { type: gauge, value: "{{ quick.json.cpu }}", label: CPU }
+        - { type: gauge, value: "{{ quick.json.mem }}", label: Memory }
+        - { type: gauge, value: "{{ quick.json.swap }}", label: Swap }
+    - type: table
+      header: false
+      items: "{{ fs.json }}"
+      limit: 5
+      columns:
+        - { value: "{{ row.mnt_point }}", width: 35% }
+        - { bar: "{{ row.percent }}", bar_color: "{{ row.percent | gte(90) | choose('bad', 'accent') }}", value: "{{ row.percent }}%" }
+        - { value: "{{ row.used | bytes }} / {{ row.size | bytes }}", width: 38%, align: right, color: muted }

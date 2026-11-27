@@ -1,0 +1,80 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.downloads
+name: Download Queue
+version: 1.0.0
+author: WidgetForge
+description: What is downloading in qBittorrent, Sonarr or Radarr, with progress, speed and time left. Add one per app.
+category: media
+
+window:
+  size: [340, 220]
+  min_size: [220, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#6cb4ff"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: app, type: choice, label: App, default: qbittorrent, options: [qbittorrent, sonarr, radarr] }
+  - { key: url, type: text, label: "Address (e.g. http://server:8080)", default: "" }
+  - { key: api_key, type: secret, label: "API key (Sonarr/Radarr; qBittorrent 5.2 or newer)" }
+  - { key: user, type: text, label: "qBittorrent user name (if no API key)", default: "" }
+  - { key: password, type: secret, label: qBittorrent password }
+  - { key: seconds, type: number, label: Check every (seconds), default: 10, min: 2, max: 600 }
+
+data:
+  # qBittorrent before 5.2 signs in with a form and a session cookie.
+  login:
+    source: net
+    when: "{{ settings.app | eq('qbittorrent') | choose(settings.user, false) }}"
+    method: POST
+    url: "{{ settings.url }}/api/v2/auth/login"
+    headers: { Content-Type: application/x-www-form-urlencoded, Referer: "{{ settings.url }}" }
+    body: "username={{ settings.user | url }}&password=[[secret:password]]"
+    interval: 1800000
+  qbt:
+    source: net
+    when: "{{ settings.app | eq('qbittorrent') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/api/v2/torrents/info?filter=active&sort=progress"
+    headers:
+      Authorization: "Bearer [[secret:api_key]]"
+      Cookie: "{{ login.cookie }}"
+      Referer: "{{ settings.url }}"
+    interval: "{{ settings.seconds | max(2) | mul(1000) }}"
+  arr:
+    source: net
+    when: "{{ settings.app | among('sonarr', 'radarr') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/api/v3/queue?pageSize=20&includeSeries=true&includeEpisode=true&includeMovie=true"
+    headers: { X-Api-Key: "[[secret:api_key]]" }
+    interval: "{{ settings.seconds | max(2) | mul(1000) }}"
+
+ui:
+  blocks:
+    - { type: text, text: "Set the app's address and key in this widget's settings.", size: sm, color: muted, visible: "{{ settings.url | not }}" }
+    - type: table
+      header: false
+      items: "{{ qbt.json }}"
+      visible: "{{ settings.app | eq('qbittorrent') }}"
+      empty: "Nothing downloading."
+      row_title: "{{ row.name }} · {{ row.state }}"
+      columns:
+        - { value: "{{ row.name }}", width: 42% }
+        - { bar: "{{ row.progress | mul(100) }}", value: "{{ row.progress | percent }}" }
+        - { value: "{{ row.dlspeed | rate }}", width: 20%, align: right, color: muted }
+        - { value: "{{ row.eta | lt(8640000) | choose(row.eta | duration, '∞') }}", width: 14%, align: right }
+    - type: table
+      header: false
+      items: "{{ arr.json.records }}"
+      visible: "{{ settings.app | among('sonarr', 'radarr') }}"
+      empty: "The queue is empty."
+      row_title: "{{ row.title }} · {{ row.status }}"
+      columns:
+        - { value: "{{ row.series.title | default(row.movie.title) | default(row.title) }}{{ row.episode.title | choose(' · ', '') }}{{ row.episode.title }}", width: 46% }
+        - { bar: "{{ row.size | sub(row.sizeleft) | div(row.size) | mul(100) }}", value: "{{ row.status }}" }
+        - { value: "{{ row.timeleft | default(row.status) }}", width: 20%, align: right, color: muted }

@@ -1,0 +1,42 @@
+schema: 1
+id: forge.top-processes
+name: Top Processes
+version: 1.0.0
+author: WidgetForge
+description: The busiest programs by CPU, with their memory. Processes with the same name are added together.
+category: system
+
+window:
+  size: [300, 380]
+  min_size: [220, 160]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ff9f6c"
+
+permissions:
+  system: [cpu, processes]
+
+settings:
+  - { key: rows, type: number, label: Rows, default: 10, min: 3, max: 15 }
+
+data:
+  sys: { source: system, interval: 2000 }
+
+ui:
+  blocks:
+    - type: column
+      gap: 8
+      children:
+        - type: row
+          children:
+            - { type: text, text: "Processes", weight: bold }
+            - { type: text, text: "CPU {{ sys.cpu.usage | fixed(0) }}%", size: sm, align: right, color: muted, mono: true }
+        - type: table
+          items: "{{ sys.processes }}"
+          limit: "{{ settings.rows }}"
+          columns:
+            - { label: Name, value: "{{ row.name }}" }
+            - { label: CPU, value: "{{ row.cpu | fixed(1) }}%", align: right }
+            - { label: Memory, value: "{{ row.memory | bytes }}", align: right }

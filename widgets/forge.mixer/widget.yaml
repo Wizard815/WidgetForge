@@ -1,0 +1,30 @@
+schema: 1
+id: forge.mixer
+name: Volume Mixer
+version: 1.0.0
+author: WidgetForge
+description: Volume for each app and each output, mute buttons, and switching speakers or headphones. Linux (PipeWire or PulseAudio) for now.
+category: media
+
+window:
+  size: [300, 260]
+  min_size: [220, 140]
+  layer: normal
+
+style:
+  theme: glass
+  accent: "#ff6cb0"
+
+permissions:
+  audio: true
+
+settings:
+  - { key: devices, type: bool, label: Show outputs, default: true }
+  - { key: apps, type: bool, label: Show apps, default: true }
+
+data:
+  audio: { source: audio, interval: 2000 }
+
+ui:
+  blocks:
+    - { type: mixer, audio: "{{ audio }}", devices: "{{ settings.devices }}", apps: "{{ settings.apps }}" }

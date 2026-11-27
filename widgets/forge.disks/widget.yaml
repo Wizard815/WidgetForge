@@ -1,0 +1,38 @@
+schema: 1
+id: forge.disks
+name: Drives
+version: 1.0.0
+author: WidgetForge
+description: Every drive with free space, type, and live read/write speed.
+category: system
+
+window:
+  size: [340, 220]
+  min_size: [240, 120]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ffb86c"
+
+permissions:
+  system: [disks]
+
+settings:
+  - { key: show_removable, type: bool, label: Include removable drives, default: true }
+
+data:
+  sys: { source: system, interval: 2000 }
+
+ui:
+  blocks:
+    - { type: text, text: "Drives", weight: bold }
+    - type: table
+      items: "{{ sys.disks.list }}"
+      empty: "No drives found."
+      row_title: "{{ row.name }} · {{ row.fs }} · {{ row.kind }} · {{ row.free | bytes }} free"
+      columns:
+        - { label: Drive, value: "{{ row.mount }}", width: 26% }
+        - { label: Used, bar: "{{ row.usage }}", value: "{{ row.usage | fixed(0) }}%", bar_color: "{{ row.usage | min(90) | eq(90) | choose('bad', 'accent') }}", width: 22% }
+        - { label: Size, value: "{{ row.used | bytes(0) }} / {{ row.total | bytes(0) }}", align: right, width: 30% }
+        - { label: "R / W", value: "{{ row.read_rate | bytes(0) }} / {{ row.write_rate | bytes(0) }}", align: right, color: muted }

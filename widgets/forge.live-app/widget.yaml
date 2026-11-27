@@ -1,0 +1,80 @@
+schema: 1
+id: forge.live-app
+name: Live App
+version: 1.0.0
+author: WidgetForge
+description: Watch any web service with a JSON address (Home Assistant, Uptime Kuma, Pi-hole, Proxmox, Plex, your own). Shows up/down, response time, and up to four values you pick. Put several in a stack.
+category: system
+
+window:
+  size: [260, 170]
+  min_size: [180, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#6cf0c2"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: title, type: text, label: Name, default: My service }
+  - { key: url, type: text, label: Address (returns JSON), default: "" }
+  - { key: token, type: secret, label: Token or API key (optional) }
+  - { key: auth_header, type: text, label: Token header name, default: Authorization }
+  - { key: auth_prefix, type: text, label: Text before the token, default: "Bearer " }
+  - { key: seconds, type: number, label: Check every (seconds), default: 30, min: 5, max: 3600 }
+  - { key: f1_label, type: text, label: Value 1 name, default: "" }
+  - { key: f1_path, type: text, label: Value 1 path (e.g. data.count), default: "" }
+  - { key: f2_label, type: text, label: Value 2 name, default: "" }
+  - { key: f2_path, type: text, label: Value 2 path, default: "" }
+  - { key: f3_label, type: text, label: Value 3 name, default: "" }
+  - { key: f3_path, type: text, label: Value 3 path, default: "" }
+  - { key: f4_label, type: text, label: Value 4 name, default: "" }
+  - { key: f4_path, type: text, label: Value 4 path, default: "" }
+
+data:
+  app:
+    source: net
+    url: "{{ settings.url }}"
+    headers:
+      # Some services (Plex) answer in XML unless asked for JSON.
+      Accept: application/json
+      "{{ settings.auth_header }}": "{{ settings.auth_prefix }}[[secret:token]]"
+    interval: "{{ settings.seconds | mul(1000) }}"
+
+ui:
+  show_errors: false
+  stack_title: false
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "{{ settings.title }}", weight: bold, clip: true }
+        - type: text
+          text: "● {{ app.ok | choose('Up', 'Down') }}"
+          align: right
+          size: sm
+          weight: bold
+          color: "{{ app.ok | choose('good', 'bad') }}"
+          visible: "{{ settings.url }}"
+    - type: text
+      text: "{{ app.status | choose(app.status, '–') }} · {{ app.ms }} ms{{ app.error | choose(' · ', '') }}{{ app.error }}"
+      size: xs
+      color: muted
+      clip: true
+      visible: "{{ app }}"
+    - type: text
+      text: "Set the address in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ settings.url | not }}"
+    - type: grid
+      columns: 2
+      gap: 8
+      children:
+        - { type: stat, label: "{{ settings.f1_label }}", value: "{{ app.json | path(settings.f1_path) }}", size: lg, visible: "{{ settings.f1_path }}" }
+        - { type: stat, label: "{{ settings.f2_label }}", value: "{{ app.json | path(settings.f2_path) }}", size: lg, visible: "{{ settings.f2_path }}" }
+        - { type: stat, label: "{{ settings.f3_label }}", value: "{{ app.json | path(settings.f3_path) }}", size: lg, visible: "{{ settings.f3_path }}" }
+        - { type: stat, label: "{{ settings.f4_label }}", value: "{{ app.json | path(settings.f4_path) }}", size: lg, visible: "{{ settings.f4_path }}" }

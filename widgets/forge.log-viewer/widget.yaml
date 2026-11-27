@@ -1,0 +1,57 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.log-viewer
+name: Log Viewer
+version: 1.0.0
+author: WidgetForge
+description: The newest lines of a log file, or of a command such as journalctl, with errors in red and warnings in yellow.
+category: dev
+
+window:
+  size: [420, 240]
+  min_size: [220, 100]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#a6e3a1"
+
+permissions:
+  files: ["setting:file"]
+  run: ["setting:command"]
+
+settings:
+  - { key: title, type: text, label: Title, default: "" }
+  - { key: file, type: file, label: Log file, placeholder: "/var/log/syslog" }
+  - { key: command, type: command, label: "Or a command (e.g. journalctl -n 40 --no-pager)", placeholder: "journalctl -n 40 --no-pager" }
+  - { key: lines, type: number, label: Lines kept, default: 40, min: 5, max: 500 }
+  - { key: seconds, type: number, label: Check every (seconds), default: 5, min: 1, max: 3600 }
+
+data:
+  log:
+    source: logfile
+    setting: file
+    when: "{{ settings.file }}"
+    lines: "{{ settings.lines }}"
+    interval: "{{ settings.seconds | max(1) | mul(1000) }}"
+  cmd:
+    source: command
+    setting: command
+    when: "{{ settings.file | not }}"
+    interval: "{{ settings.seconds | max(1) | mul(1000) }}"
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold, visible: "{{ settings.title }}" }
+    - { type: text, text: "Choose a log file or type a command in this widget's settings.", size: sm, color: muted, visible: "{{ settings.file | choose(false, cmd.configured | eq(false)) }}" }
+    - type: each
+      items: "{{ log.lines | slice(-50) }}"
+      gap: 0
+      visible: "{{ settings.file }}"
+      child: { type: text, text: "{{ item.text }}", mono: true, size: xs, clip: true, color: "{{ item.level | default('inherit') }}" }
+    - type: each
+      items: "{{ cmd.lines | slice(-50) }}"
+      gap: 0
+      visible: "{{ settings.file | not }}"
+      child: { type: text, text: "{{ item }}", mono: true, size: xs, clip: true }

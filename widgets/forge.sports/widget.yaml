@@ -1,0 +1,79 @@
+schema: 1
+id: forge.sports
+name: Team Scores
+version: 1.0.0
+author: WidgetForge
+description: Latest results and next match for your team, from TheSportsDB. The free test key shows only the next match; a TheSportsDB supporter key shows more.
+category: info
+
+window:
+  size: [300, 260]
+  min_size: [200, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7ee081"
+
+permissions:
+  network: [www.thesportsdb.com]
+
+settings:
+  - { key: team, type: text, label: Team name, default: Arsenal }
+  - { key: api_key, type: text, label: TheSportsDB key ("123" is the free test key), default: "123" }
+  - { key: results, type: number, label: Results shown, default: 5, min: 1, max: 15 }
+
+data:
+  team:
+    source: net
+    when: "{{ settings.team }}"
+    url: "https://www.thesportsdb.com/api/v1/json/{{ settings.api_key | url }}/searchteams.php?t={{ settings.team | url }}"
+    interval: 86400000
+  last:
+    source: net
+    when: "{{ team.json.teams[0].idTeam }}"
+    url: "https://www.thesportsdb.com/api/v1/json/{{ settings.api_key | url }}/eventslast.php?id={{ team.json.teams[0].idTeam }}"
+    interval: 900000
+  next:
+    source: net
+    when: "{{ team.json.teams[0].idTeam }}"
+    url: "https://www.thesportsdb.com/api/v1/json/{{ settings.api_key | url }}/eventsnext.php?id={{ team.json.teams[0].idTeam }}"
+    interval: 3600000
+
+ui:
+  blocks:
+    - type: text
+      text: "No team called “{{ settings.team }}” was found."
+      size: sm
+      color: bad
+      visible: "{{ team.ok | choose(team.json.teams | count | not, false) }}"
+    - type: column
+      gap: 8
+      visible: "{{ team.json.teams | count }}"
+      children:
+        - type: row
+          children:
+            - { type: text, text: "{{ team.json.teams[0].strTeam }}", weight: bold, clip: true }
+            - { type: text, text: "{{ team.json.teams[0].strLeague }}", size: xs, color: muted, align: right, clip: true }
+        - { type: text, text: "Next", size: xs, color: muted }
+        - type: table
+          header: false
+          items: "{{ next.json.events }}"
+          limit: 3
+          empty: "No upcoming match listed."
+          columns:
+            - { value: "{{ row.strTimestamp | utcparse | date('ddd D MMM HH:mm') }}", width: 38%, color: accent }
+            - { value: "{{ row.strEvent }}" }
+        - { type: text, text: "Results", size: xs, color: muted }
+        - type: table
+          header: false
+          items: "{{ last.json.results }}"
+          limit: "{{ settings.results }}"
+          empty: "No results listed."
+          columns:
+            - { value: "{{ row.dateEvent | date('D MMM') }}", width: 18%, color: muted }
+            - { value: "{{ row.strHomeTeam }}", align: right }
+            - { value: "{{ row.intHomeScore }} – {{ row.intAwayScore }}", width: 16%, align: center }
+            - { value: "{{ row.strAwayTeam }}" }
+    - { type: text, text: "Data by TheSportsDB.com", size: xs, color: muted, align: right }

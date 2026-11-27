@@ -1,0 +1,58 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.services
+name: Services
+version: 1.0.0
+author: WidgetForge
+description: All your homelab services as green or red tiles in one widget, with response times. Web addresses are checked with a request; tcp://host:port checks that a port is open.
+category: system
+
+window:
+  size: [340, 200]
+  min_size: [160, 80]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#6cf0c2"
+
+permissions:
+  network: ["setting:services"]
+  latency: true
+
+settings:
+  - { key: title, type: text, label: Title, default: Services }
+  - key: services
+    type: lines
+    label: "Services, one per line (Name | address)"
+    placeholder: "Plex | http://192.168.1.10:32400/identity\nPi-hole | http://192.168.1.2/admin\nSSH | tcp://192.168.1.10:22"
+  - { key: columns, type: number, label: Tiles per row, default: 3, min: 1, max: 8 }
+  - { key: seconds, type: number, label: Check every (seconds), default: 60, min: 10, max: 3600 }
+
+data:
+  chk:
+    source: checks
+    when: "{{ settings.services }}"
+    list: "{{ settings.services }}"
+    interval: "{{ settings.seconds | max(10) | mul(1000) }}"
+
+ui:
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "{{ settings.title }}", weight: bold, clip: true }
+        - { type: text, text: "{{ chk.up }} / {{ chk.total }} up", size: sm, align: right, color: "{{ chk.all_up | choose('good', 'bad') }}", visible: "{{ chk.total }}" }
+    - { type: text, text: "List your services in this widget's settings.", size: sm, color: muted, visible: "{{ settings.services | not }}" }
+    - type: each
+      items: "{{ chk.items }}"
+      columns: "{{ settings.columns }}"
+      child:
+        type: button
+        style: tile
+        on: "{{ item.up }}"
+        icon: "{{ item.up | choose('●', '✕') }}"
+        label: "{{ item.name }}"
+        note: "{{ item.up | choose(item.ms, 'down') }}{{ item.up | choose(' ms', '') }}"
+        title: "{{ item.address }} · {{ item.status }}"
+        open: "{{ item.address | replace('^tcp:.*', '') }}"

@@ -1,0 +1,109 @@
+schema: 1
+id: forge.weather
+name: Weather
+version: 1.0.0
+author: WidgetForge
+description: Current weather and a 5-day forecast from Open-Meteo (free, no account). Add more for other cities.
+category: info
+
+window:
+  size: [280, 300]
+  min_size: [200, 160]
+  layer: desktop
+  multi_instance: true
+  stack_height: 0
+
+style:
+  theme: glass
+  accent: "#ffc861"
+
+permissions:
+  network: [geocoding-api.open-meteo.com, api.open-meteo.com]
+
+settings:
+  - { key: city, type: text, label: City, default: London }
+  - { key: units, type: choice, label: Temperature, default: celsius, options: [celsius, fahrenheit] }
+  - { key: wind, type: choice, label: Wind speed, default: kmh, options: [kmh, mph, ms, kn] }
+  - { key: forecast, type: bool, label: Show forecast, default: true }
+
+data:
+  geo:
+    source: net
+    url: "https://geocoding-api.open-meteo.com/v1/search?count=1&name={{ settings.city | url }}"
+    interval: 86400000
+  wx:
+    source: net
+    when: "{{ geo.json.results }}"
+    url: "https://api.open-meteo.com/v1/forecast?latitude={{ geo.json.results[0].latitude }}&longitude={{ geo.json.results[0].longitude }}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=auto&temperature_unit={{ settings.units }}&wind_speed_unit={{ settings.wind }}"
+    interval: 900000
+
+# PLACEHOLDER wording: WMO weather codes as plain words.
+lookups:
+  wmo:
+    "0": Clear
+    "1": Mostly clear
+    "2": Partly cloudy
+    "3": Overcast
+    "45": Fog
+    "48": Freezing fog
+    "51": Light drizzle
+    "53": Drizzle
+    "55": Heavy drizzle
+    "56": Freezing drizzle
+    "57": Freezing drizzle
+    "61": Light rain
+    "63": Rain
+    "65": Heavy rain
+    "66": Freezing rain
+    "67": Freezing rain
+    "71": Light snow
+    "73": Snow
+    "75": Heavy snow
+    "77": Snow grains
+    "80": Light showers
+    "81": Showers
+    "82": Heavy showers
+    "85": Snow showers
+    "86": Heavy snow showers
+    "95": Thunderstorm
+    "96": Thunderstorm, hail
+    "99": Thunderstorm, hail
+    default: "–"
+
+ui:
+  blocks:
+    - type: text
+      text: "No place called “{{ settings.city }}” was found."
+      color: bad
+      size: sm
+      visible: "{{ geo.json.results | count | not | choose(geo.ok, false) }}"
+    - type: column
+      gap: 8
+      visible: "{{ wx.json.current }}"
+      children:
+        - type: row
+          children:
+            - type: column
+              gap: 0
+              children:
+                - { type: text, text: "{{ geo.json.results[0].name }}", weight: bold, clip: true }
+                - { type: text, text: "{{ wx.json.current.weather_code | lookup('wmo') }}", size: sm, color: muted }
+            - type: text
+              text: "{{ wx.json.current.temperature_2m | round }}{{ wx.json.current_units.temperature_2m }}"
+              size: xxl
+              weight: bold
+              align: right
+        - type: text
+          text: "Feels {{ wx.json.current.apparent_temperature | round }}° · Humidity {{ wx.json.current.relative_humidity_2m }}% · Wind {{ wx.json.current.wind_speed_10m | round }} {{ wx.json.current_units.wind_speed_10m }}"
+          size: xs
+          color: muted
+        - type: table
+          visible: "{{ settings.forecast }}"
+          header: false
+          items: "{{ wx.json.daily.time }}"
+          columns:
+            - { value: "{{ row | date('ddd') }}", width: 16% }
+            - { value: "{{ wx.json.daily.weather_code[index] | lookup('wmo') }}" }
+            - { value: "{{ wx.json.daily.precipitation_probability_max[index] }}%", align: right, color: "#8ec5ff", width: 17% }
+            - { value: "{{ wx.json.daily.temperature_2m_max[index] | round }}° / {{ wx.json.daily.temperature_2m_min[index] | round }}°", align: right, width: 30% }
+    - { type: text, text: "Weather data by Open-Meteo.com", size: xs, color: muted, align: right }

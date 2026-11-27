@@ -10,41 +10,30 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "macOSPrivateApi": true,
-    "withGlobalTauri": false,
     "windows": [
       {
         "label": "hub",
         "title": "WidgetForge",
         "url": "hub.html",
-        "width": 1100,
-        "height": 720,
-        "minWidth": 860,
-        "minHeight": 560,
-        "center": true,
+        "width": 1000,
+        "height": 680,
+        "minWidth": 720,
+        "minHeight": 480,
         "visible": false
       }
     ],
     "security": {
-      "csp": {
-        "default-src": "'self' ipc: http://ipc.localhost",
-        "img-src": "'self' data: blob: widget: http://widget.localhost",
-        "frame-src": "widget: http://widget.localhost",
-        "style-src": "'self' 'unsafe-inline'",
-        "font-src": "'self' data:"
-      }
+      "csp": null
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "category": "Utility",
-    "shortDescription": "Desktop widgets for everyone",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon.icns",
+      "icons/icon.png",
       "icons/icon.ico"
     ],
     "resources": {
@@ -52,11 +41,21 @@
     },
     "fileAssociations": [
       {
-        "ext": ["forgewidget"],
+        "ext": [
+          "forgewidget"
+        ],
         "name": "WidgetForge widget",
-        "description": "WidgetForge widget package",
+        "description": "A WidgetForge widget package",
+        "mimeType": "application/x-forgewidget",
         "role": "Viewer"
       }
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/mime/packages/widgetforge.xml": "mime/widgetforge.xml"
+        }
+      }
+    }
   }
 }

@@ -1,0 +1,46 @@
+schema: 1
+id: forge.command
+name: Command Output
+version: 1.0.0
+author: WidgetForge
+description: Runs a command you type, every so often, and shows what it prints — like Conky or KDE's Command Output. Only the command you type yourself is ever run.
+category: system
+
+window:
+  size: [320, 200]
+  min_size: [180, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#a6e3a1"
+
+permissions:
+  run: ["setting:command"]
+
+settings:
+  - { key: title, type: text, label: Title, default: "" }
+  - { key: command, type: command, label: Command }
+  - { key: seconds, type: number, label: Run every (seconds), default: 30, min: 2, max: 86400 }
+  - { key: show_errors, type: bool, label: Show error output, default: true }
+
+data:
+  out: { source: command, interval: "{{ settings.seconds | max(2) | mul(1000) }}" }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold, clip: true, visible: "{{ settings.title }}" }
+    - type: text
+      text: "Type a command in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ out.configured | eq(false) }}"
+    - { type: text, text: "{{ out.stdout }}", mono: true, size: sm }
+    - { type: text, text: "{{ out.stderr }}", mono: true, size: xs, color: bad, visible: "{{ settings.show_errors | choose(out.stderr, false) }}" }
+    - type: text
+      text: "{{ out.timed_out | choose('Stopped after 15 s', '') }}{{ out.ok | choose('', ' exit code ') }}{{ out.ok | choose('', out.code) }} · {{ out.ms }} ms"
+      size: xs
+      color: muted
+      align: right
+      visible: "{{ out.configured }}"

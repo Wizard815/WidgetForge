@@ -1,0 +1,58 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.translate
+name: Translator
+version: 1.0.0
+author: WidgetForge
+description: Translate text with LibreTranslate, which you can run on your own server for free and private translation, or use libretranslate.com with a key.
+category: tools
+
+window:
+  size: [300, 250]
+  min_size: [220, 160]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#8fd3ff"
+
+permissions:
+  network: ["setting:server"]
+
+settings:
+  - { key: server, type: text, label: "LibreTranslate address (e.g. http://server:5000)", default: "" }
+  - { key: api_key, type: secret, label: API key (if the server needs one) }
+  - { key: target, type: text, label: Translate into (language code), default: en }
+
+data:
+  langs:
+    source: net
+    when: "{{ settings.server }}"
+    url: "{{ settings.server }}/languages"
+    interval: 86400000
+  out:
+    source: net
+    manual: true
+    method: POST
+    url: "{{ settings.server }}/translate"
+    headers:
+      Content-Type: application/json
+    body:
+      q: "{{ input.text }}"
+      source: auto
+      target: "{{ input.target | default(settings.target) }}"
+      format: text
+      api_key: "[[secret:api_key]]"
+
+ui:
+  blocks:
+    - { type: text, text: "Set your LibreTranslate address in this widget's settings.", size: sm, color: muted, visible: "{{ settings.server | not }}" }
+    - { type: input, name: target, options: "{{ langs.json }}", value: "{{ settings.target }}", visible: "{{ langs.json }}" }
+    - { type: input, name: text, multiline: true, placeholder: "Type text, then press Enter", submit: out, button: Translate }
+    - { type: text, text: "{{ out.json.translatedText }}", size: md, visible: "{{ out.json.translatedText }}" }
+    - type: text
+      size: xs
+      color: muted
+      text: "From {{ out.json.detectedLanguage.language }} ({{ out.json.detectedLanguage.confidence | fixed(0) }}% sure)"
+      visible: "{{ out.json.detectedLanguage }}"
+    - { type: text, text: "{{ out.json.error }}", size: sm, color: bad, visible: "{{ out.json.error }}" }

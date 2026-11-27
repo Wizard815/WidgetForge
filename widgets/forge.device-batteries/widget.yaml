@@ -1,0 +1,36 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.device-batteries
+name: Device Batteries
+version: 1.0.0
+author: WidgetForge
+description: Battery levels of your wireless mouse, keyboard, headphones, controller and phone (through KDE Connect). Linux for now, through UPower.
+category: system
+
+window:
+  size: [260, 170]
+  min_size: [180, 80]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#6cf0a0"
+
+permissions:
+  system: [devices]
+
+data:
+  sys: { source: system, interval: 60000 }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ sys.devices.reason }}", size: sm, color: muted, visible: "{{ sys.devices.available | eq(false) }}" }
+    - type: table
+      header: false
+      items: "{{ sys.devices.list }}"
+      empty: "No wireless devices with a battery found."
+      row_title: "{{ row.kind }} · {{ row.state }}"
+      columns:
+        - { value: "{{ row.name }}", width: 45% }
+        - { bar: "{{ row.percent }}", bar_color: "{{ row.low | choose('bad', 'accent') }}", value: "{{ row.percent }}%" }
+        - { value: "{{ row.percent | fixed(0) }}%", width: 18%, align: right, color: "{{ row.low | choose('bad', 'inherit') }}" }

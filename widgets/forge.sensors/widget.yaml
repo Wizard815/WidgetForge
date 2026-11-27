@@ -1,0 +1,66 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.sensors
+name: Sensors
+version: 1.0.0
+author: WidgetForge
+description: Every temperature, fan speed and power reading your hardware reports. Linux for now.
+category: system
+
+window:
+  size: [300, 300]
+  min_size: [200, 120]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#ff8a5c"
+
+permissions:
+  system: [sensors]
+
+settings:
+  - { key: temps, type: bool, label: Show temperatures, default: true }
+  - { key: fans, type: bool, label: Show fans, default: true }
+  - { key: power, type: bool, label: Show power, default: true }
+  - { key: volts, type: bool, label: Show voltages, default: false }
+
+data:
+  sys: { source: system, interval: 2000 }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ sys.sensors.reason }}", size: sm, color: muted, visible: "{{ sys.sensors.available | eq(false) }}" }
+    - type: row
+      visible: "{{ sys.sensors.available }}"
+      children:
+        - { type: stat, label: Power draw, value: "{{ sys.sensors.power_total | eq(null) | choose('–', sys.sensors.power_total | fixed(1)) }} W", size: lg }
+        - { type: stat, label: Fans, value: "{{ sys.sensors.fan_count }}", size: lg, align: right }
+    - type: table
+      header: false
+      items: "{{ sys.sensors.temps }}"
+      visible: "{{ settings.temps }}"
+      columns:
+        - { value: "🌡 {{ row.name }}" }
+        - { value: "{{ row.value | fixed(0) }} °C", width: 25%, align: right, color: "{{ row.value | gte(85) | choose('bad', row.value | gte(70) | choose('warn', 'inherit')) }}" }
+    - type: table
+      header: false
+      items: "{{ sys.sensors.fans }}"
+      visible: "{{ settings.fans }}"
+      columns:
+        - { value: "✣ {{ row.name }}" }
+        - { value: "{{ row.value | number }} rpm", width: 30%, align: right }
+    - type: table
+      header: false
+      items: "{{ sys.sensors.power }}"
+      visible: "{{ settings.power }}"
+      columns:
+        - { value: "⚡ {{ row.name }}" }
+        - { value: "{{ row.value | fixed(1) }} W", width: 25%, align: right }
+    - type: table
+      header: false
+      items: "{{ sys.sensors.volts }}"
+      visible: "{{ settings.volts }}"
+      columns:
+        - { value: "{{ row.name }}" }
+        - { value: "{{ row.value | fixed(3) }} V", width: 25%, align: right }

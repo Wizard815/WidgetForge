@@ -1,0 +1,36 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.converter
+name: Converter
+version: 1.0.0
+author: WidgetForge
+description: Convert units (length, weight, temperature, volume, speed, area, data, time) and currencies. Currency rates come from Frankfurter, free and updated daily.
+category: tools
+
+window:
+  size: [260, 230]
+  min_size: [200, 180]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#7cc4ff"
+
+permissions:
+  network: [api.frankfurter.dev]
+
+settings:
+  - { key: currency, type: bool, label: Include currencies, default: true }
+
+data:
+  fx:
+    source: net
+    when: "{{ settings.currency }}"
+    url: "https://api.frankfurter.dev/v1/latest?base=EUR"
+    interval: 21600000
+
+ui:
+  show_errors: false
+  blocks:
+    - { type: converter, rates: "{{ fx.json }}", base: EUR }

@@ -1,14 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "hub",
-  "description": "The Hub (main menu) window.",
-  "windows": ["hub"],
+  "identifier": "default",
+  "description": "Hub and widget host windows",
+  "windows": ["hub", "w-*"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
-    "dialog:allow-open",
-    "dialog:allow-save",
-    "dialog:allow-ask",
-    "dialog:allow-message"
+    "core:window:allow-start-resize-dragging"
   ]
 }

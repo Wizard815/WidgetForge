@@ -1,0 +1,55 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.daily-picture
+name: Picture of the Day
+version: 1.0.0
+author: WidgetForge
+description: A new picture every day, from NASA's Astronomy Picture of the Day or Wikipedia's featured picture, with its story and credit.
+category: info
+
+window:
+  size: [320, 300]
+  min_size: [200, 160]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#9bb8ff"
+
+permissions:
+  network: [api.nasa.gov, en.wikipedia.org]
+
+settings:
+  - { key: source, type: choice, label: Picture from, default: nasa, options: [nasa, wikipedia] }
+  - { key: nasa_key, type: text, label: NASA API key (DEMO_KEY works for a few people), default: DEMO_KEY }
+  - { key: story, type: bool, label: Show the story, default: false }
+
+data:
+  apod:
+    source: net
+    when: "{{ settings.source | eq('nasa') }}"
+    url: "https://api.nasa.gov/planetary/apod?api_key={{ settings.nasa_key | url }}"
+    interval: 10800000
+  wiki:
+    source: net
+    when: "{{ settings.source | eq('wikipedia') }}"
+    url: "https://en.wikipedia.org/api/rest_v1/feed/featured/{{ _now | date('YYYY/MM/DD') }}"
+    interval: 10800000
+
+ui:
+  blocks:
+    # NASA
+    - { type: image, src: "{{ apod.json.url }}", fit: cover, visible: "{{ apod.json.media_type | eq('image') }}" }
+    - { type: button, label: "▶ Today's is a video — open it", open: "{{ apod.json.url }}", visible: "{{ apod.json.media_type | eq('video') }}" }
+    - { type: text, text: "{{ apod.json.title }}", weight: bold, clip: true, visible: "{{ settings.source | eq('nasa') }}" }
+    - { type: text, text: "{{ apod.json.copyright | default('NASA') | replace('\\n', ' ') }} · {{ apod.json.date }}", size: xs, color: muted, visible: "{{ apod.json }}" }
+    - { type: text, text: "{{ apod.json.explanation }}", size: xs, visible: "{{ settings.story | choose(apod.json, false) }}" }
+    # Wikipedia
+    - { type: image, src: "{{ wiki.json.image.thumbnail.source }}", fit: cover, visible: "{{ settings.source | eq('wikipedia') | choose(wiki.json.image, false) }}" }
+    - { type: text, text: "{{ wiki.json.image.description.text }}", size: sm, visible: "{{ settings.source | eq('wikipedia') }}" }
+    - type: text
+      size: xs
+      color: muted
+      text: "{{ wiki.json.image.artist.text }} · {{ wiki.json.image.license.type }} · Wikimedia Commons"
+      visible: "{{ wiki.json.image }}"

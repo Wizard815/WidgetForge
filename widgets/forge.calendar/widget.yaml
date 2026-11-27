@@ -1,0 +1,60 @@
+schema: 1
+id: forge.calendar
+name: Calendar
+version: 1.0.0
+author: WidgetForge
+description: A month view and upcoming events from any calendar link (ICS / webcal), such as Google Calendar's "secret address in iCal format".
+category: time
+
+window:
+  size: [300, 320]
+  min_size: [200, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ff8fc7"
+
+permissions:
+  network: ["setting:ics_url"]
+
+settings:
+  - { key: title, type: text, label: Title, default: Calendar }
+  - { key: ics_url, type: text, label: Calendar link (ICS), default: "" }
+  - { key: days, type: number, label: Days ahead, default: 14, min: 1, max: 365 }
+  - { key: rows, type: number, label: Events shown, default: 8, min: 1, max: 30 }
+  - { key: view, type: choice, label: View, default: list, options: [list, month, both] }
+  - { key: monday, type: bool, label: Week starts on Monday, default: true }
+
+data:
+  cal:
+    source: net
+    format: ics
+    url: "{{ settings.ics_url }}"
+    days: "{{ settings.days }}"
+    interval: 900000
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold }
+    - type: text
+      text: "Paste a calendar link (ICS) in this widget's settings to see events."
+      size: sm
+      color: muted
+      visible: "{{ settings.ics_url | not }}"
+    - type: month
+      visible: "{{ settings.view | eq('list') | not }}"
+      events: "{{ cal.events }}"
+      week_starts_monday: "{{ settings.monday }}"
+    - type: table
+      header: false
+      visible: "{{ settings.ics_url | choose(settings.view | eq('month') | not, false) }}"
+      items: "{{ cal.events }}"
+      limit: "{{ settings.rows }}"
+      empty: "Nothing coming up."
+      row_title: "{{ row.summary }} {{ row.location }}"
+      columns:
+        - { value: "{{ row.day }}", width: 30%, color: accent }
+        - { value: "{{ row.time }}", width: 17%, color: muted }
+        - { value: "{{ row.summary }}" }

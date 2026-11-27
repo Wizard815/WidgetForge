@@ -1,0 +1,96 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.github
+name: GitHub
+version: 1.0.0
+author: WidgetForge
+description: Your GitHub notifications, pull requests waiting for your review, and the latest CI runs of a repository you pick.
+category: dev
+
+window:
+  size: [340, 280]
+  min_size: [220, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#c0c8d2"
+
+permissions:
+  network: [api.github.com]
+
+settings:
+  - { key: token, type: secret, label: "Personal access token (classic, with notifications and repo)" }
+  - { key: repo, type: text, label: "Repository for CI runs (owner/name, optional)", default: "" }
+  - { key: minutes, type: number, label: Check every (minutes), default: 2, min: 1, max: 60 }
+
+data:
+  notes:
+    source: net
+    url: https://api.github.com/notifications?per_page=20
+    headers: &gh
+      Authorization: "Bearer [[secret:token]]"
+      Accept: application/vnd.github+json
+      X-GitHub-Api-Version: "2022-11-28"
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+  reviews:
+    source: net
+    url: "https://api.github.com/search/issues?per_page=10&q={{ 'is:open is:pr review-requested:@me archived:false' | url }}"
+    headers: *gh
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+  runs:
+    source: net
+    when: "{{ settings.repo }}"
+    url: "https://api.github.com/repos/{{ settings.repo }}/actions/runs?per_page=5"
+    headers: *gh
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+
+lookups:
+  ci:
+    success: "✓"
+    failure: "✕"
+    cancelled: "–"
+    skipped: "–"
+    default: "…"
+
+ui:
+  show_errors: false
+  blocks:
+    - { type: text, text: "Add a token in this widget's settings.", size: sm, color: muted, visible: "{{ notes.status | eq(401) }}" }
+    - type: row
+      visible: "{{ notes.ok }}"
+      children:
+        - { type: stat, label: Notifications, value: "{{ notes.json | count }}", size: lg }
+        - { type: stat, label: Reviews for you, value: "{{ reviews.json.total_count | default(0) }}", size: lg, align: right }
+    - type: table
+      header: false
+      items: "{{ notes.json }}"
+      limit: 5
+      row_open: "https://github.com/notifications"
+      row_title: "{{ row.reason }}"
+      columns:
+        - { value: "{{ row.repository.name }}", width: 30%, color: muted }
+        - { value: "{{ row.subject.title }}" }
+        - { value: "{{ row.updated_at | ago }}", width: 20%, align: right, color: muted }
+    - { type: divider, visible: "{{ reviews.json.items }}" }
+    - type: table
+      header: false
+      items: "{{ reviews.json.items }}"
+      limit: 4
+      row_open: "{{ row.html_url }}"
+      columns:
+        - { value: "{{ row.repository_url | replace('.*/', '') }}", width: 30%, color: accent }
+        - { value: "{{ row.title }}" }
+    - { type: divider, visible: "{{ settings.repo }}" }
+    - type: table
+      header: false
+      items: "{{ runs.json.workflow_runs }}"
+      visible: "{{ settings.repo }}"
+      row_open: "{{ row.html_url }}"
+      columns:
+        - value: "{{ row.conclusion | default(row.status) | lookup('ci') }}"
+          width: 8%
+          color: "{{ row.conclusion | eq('success') | choose('good', row.conclusion | eq('failure') | choose('bad', 'muted')) }}"
+        - { value: "{{ row.name }} · {{ row.head_branch }}" }
+        - { value: "{{ row.created_at | ago }}", width: 20%, align: right, color: muted }

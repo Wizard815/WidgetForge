@@ -1,0 +1,66 @@
+schema: 1
+id: forge.discord-channel
+name: Discord Channel
+version: 1.0.0
+author: WidgetForge
+description: The latest messages in one Discord channel, read by your own bot. Needs a bot token from the Discord Developer Portal with Message Content Intent turned on, and the bot added to the server with View Channel and Read Message History. Click a message to open it in Discord.
+category: social
+
+window:
+  size: [320, 340]
+  min_size: [220, 160]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#8c9eff"
+
+permissions:
+  network: [discord.com]
+
+settings:
+  - { key: channel_id, type: text, label: Channel ID (right-click channel → Copy Channel ID), default: "" }
+  - { key: bot_token, type: secret, label: Bot token }
+  - { key: rows, type: number, label: Messages shown, default: 10, min: 1, max: 50 }
+  - { key: seconds, type: number, label: Check every (seconds), default: 60, min: 15, max: 3600 }
+
+data:
+  channel:
+    source: net
+    when: "{{ settings.channel_id | choose(settings.bot_token, false) }}"
+    url: "https://discord.com/api/v10/channels/{{ settings.channel_id | url }}"
+    headers: { Authorization: "Bot [[secret:bot_token]]" }
+    interval: 3600000
+  messages:
+    source: net
+    when: "{{ settings.channel_id | choose(settings.bot_token, false) }}"
+    url: "https://discord.com/api/v10/channels/{{ settings.channel_id | url }}/messages?limit={{ settings.rows | min(50) | max(1) }}"
+    headers: { Authorization: "Bot [[secret:bot_token]]" }
+    interval: "{{ settings.seconds | max(15) | mul(1000) }}"
+
+ui:
+  show_errors: false
+  blocks:
+    - type: text
+      text: "Set the channel ID and bot token in this widget's settings."
+      size: sm
+      color: muted
+      visible: "{{ settings.channel_id | choose(settings.bot_token, false) | not }}"
+    - type: text
+      text: "{{ messages.json.message | default(messages.error) }}"
+      size: sm
+      color: bad
+      visible: "{{ messages.ok | not | choose(messages, false) }}"
+    - { type: text, text: "# {{ channel.json.name }}", weight: bold, clip: true, visible: "{{ channel.json.name }}" }
+    - type: table
+      visible: "{{ messages.ok }}"
+      header: false
+      items: "{{ messages.json }}"
+      empty: "No messages yet."
+      row_open: "https://discord.com/channels/{{ channel.json.guild_id }}/{{ settings.channel_id }}/{{ row.id }}"
+      row_title: "{{ row.author.global_name | default(row.author.username) }}: {{ row.content }}"
+      columns:
+        - { value: "{{ row.author.global_name | default(row.author.username) }}", width: 28%, color: accent }
+        - { value: "{{ row.content | replace('<@!?&?\\d+>', '@…') | replace('<#\\d+>', '#…') | default(row.attachments | count | choose('(attachment)', '(embed)')) }}" }
+        - { value: "{{ row.timestamp | time('HH:mm') }}", width: 16%, align: right, color: muted }

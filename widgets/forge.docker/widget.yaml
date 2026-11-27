@@ -1,0 +1,50 @@
+schema: 1
+id: forge.docker
+name: Docker
+version: 1.0.0
+author: WidgetForge
+description: Your containers, running or stopped, with start, stop and restart. Works with this computer's Docker or Podman, or a server's Docker address.
+category: system
+
+window:
+  size: [340, 300]
+  min_size: [240, 140]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#2496ed"
+
+permissions:
+  docker: true
+
+settings:
+  - { key: title, type: text, label: Name, default: Docker }
+  - { key: docker, type: text, label: "Docker address (unix:///var/run/docker.sock or http://server:2375)", default: "unix:///var/run/docker.sock" }
+  - { key: seconds, type: number, label: Check every (seconds), default: 10, min: 2, max: 3600 }
+
+data:
+  dk: { source: docker, interval: "{{ settings.seconds | max(2) | mul(1000) }}" }
+
+ui:
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "{{ settings.title }}", weight: bold, clip: true }
+        - { type: text, text: "{{ dk.running }} / {{ dk.total }} running", size: sm, color: muted, align: right, visible: "{{ dk.total | eq(null) | not }}" }
+    - type: table
+      header: false
+      items: "{{ dk.containers }}"
+      empty: "No containers."
+      row_title: "{{ row.image }} · {{ row.status }}"
+      columns:
+        - { value: "●", width: 7%, color: "{{ row.running | choose('good', 'muted') }}" }
+        - { value: "{{ row.name }}" }
+        - { value: "{{ row.status }}", width: 30%, color: muted }
+        - width: 30%
+          align: right
+          actions:
+            - { label: Start, action: docker.start, arg: "{{ row.id }}", visible: "{{ row.running | not }}" }
+            - { label: Stop, action: docker.stop, arg: "{{ row.id }}", confirm: true, visible: "{{ row.running }}" }
+            - { label: Restart, action: docker.restart, arg: "{{ row.id }}", confirm: true, visible: "{{ row.running }}" }

@@ -1,0 +1,69 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.steam-friends
+name: Steam Friends
+version: 1.0.0
+author: WidgetForge
+description: Which of your Steam friends are online and what they are playing. Needs your own Steam Web API key and a public friends list.
+category: games
+
+window:
+  size: [280, 260]
+  min_size: [200, 100]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#66c0f4"
+
+permissions:
+  network: [api.steampowered.com]
+
+settings:
+  - { key: key, type: secret, label: "Steam Web API key (steamcommunity.com/dev/apikey)" }
+  - { key: steamid, type: text, label: "Your Steam ID (the 17-digit number)", default: "" }
+  - { key: offline, type: bool, label: Show offline friends, default: false }
+  - { key: minutes, type: number, label: Check every (minutes), default: 2, min: 1, max: 60 }
+
+data:
+  friends:
+    source: net
+    when: "{{ settings.steamid }}"
+    url: "https://api.steampowered.com/ISteamUser/GetFriendList/v1/?relationship=friend&key=[[secret:key]]&steamid={{ settings.steamid | url }}"
+    interval: 3600000
+  people:
+    source: net
+    when: "{{ friends.json.friendslist.friends }}"
+    url: "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=[[secret:key]]&steamids={{ friends.json.friendslist.friends | pluck('steamid') | slice(0, 100) | join(',') }}"
+    interval: "{{ settings.minutes | max(1) | mul(60000) }}"
+
+lookups:
+  persona:
+    "0": Offline
+    "1": Online
+    "2": Busy
+    "3": Away
+    "4": Snooze
+    "5": Looking to trade
+    "6": Looking to play
+    default: Online
+
+ui:
+  blocks:
+    - { type: text, text: "Add your API key and Steam ID in this widget's settings.", size: sm, color: muted, visible: "{{ settings.steamid | not }}" }
+    - { type: text, text: "Steam would not share the friends list (it may be private).", size: sm, color: muted, visible: "{{ friends.status | eq(401) }}" }
+    - type: row
+      visible: "{{ people.json }}"
+      children:
+        - { type: text, text: Steam friends, weight: bold }
+        - { type: text, text: "{{ people.json.response.players | except('personastate', 0) | count }} online", size: sm, align: right, color: muted }
+    - type: table
+      header: false
+      items: "{{ settings.offline | choose(people.json.response.players, people.json.response.players | except('personastate', 0)) | sort('personaname') | sort('gameextrainfo', 'desc') }}"
+      empty: "Nobody is online."
+      visible: "{{ people.json }}"
+      columns:
+        - { value: "●", width: 7%, color: "{{ row.gameextrainfo | choose('good', row.personastate | eq(0) | choose('muted', 'accent')) }}" }
+        - { value: "{{ row.personaname }}", width: 42% }
+        - { value: "{{ row.gameextrainfo | default(row.personastate | lookup('persona')) }}", color: "{{ row.gameextrainfo | choose('good', 'muted') }}" }
+    - { type: text, text: "Data from Steam. Not affiliated with Valve.", size: xs, color: muted, align: right }

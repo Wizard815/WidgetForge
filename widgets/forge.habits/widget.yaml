@@ -1,0 +1,30 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.habits
+name: Habits
+version: 1.0.0
+author: WidgetForge
+description: Tick off daily habits and keep your streaks going. Saved on this computer only.
+category: productivity
+
+window:
+  size: [300, 200]
+  min_size: [220, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ff9f6b"
+
+permissions:
+  storage: true
+
+settings:
+  - { key: title, type: text, label: Title, default: Habits }
+  - { key: days, type: number, label: Days shown, default: 7, min: 3, max: 14 }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold, visible: "{{ settings.title }}" }
+    - { type: habits, key: habits, days: "{{ settings.days }}" }

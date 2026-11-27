@@ -1,0 +1,70 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.home-assistant
+name: Home Assistant
+version: 1.0.0
+author: WidgetForge
+description: Your chosen Home Assistant lights, switches and sensors. Tap a light or switch to toggle it; sensors show their value.
+category: home
+
+window:
+  size: [320, 220]
+  min_size: [160, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#41bdf5"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: url, type: text, label: "Home Assistant address (e.g. http://homeassistant.local:8123)", default: "" }
+  - { key: token, type: secret, label: Long-lived access token (your profile → Security) }
+  - { key: entities, type: lines, label: "Entities, one per line", placeholder: "light.living_room\nswitch.coffee_machine\nsensor.outdoor_temperature" }
+  - { key: columns, type: number, label: Tiles per row, default: 3, min: 1, max: 8 }
+  - { key: seconds, type: number, label: Check every (seconds), default: 10, min: 2, max: 600 }
+
+data:
+  st:
+    source: net
+    when: "{{ settings.entities }}"
+    for_each: "{{ settings.entities | lines }}"
+    url: "{{ settings.url }}/api/states/{{ item }}"
+    headers: { Authorization: "Bearer [[secret:token]]" }
+    interval: "{{ settings.seconds | max(2) | mul(1000) }}"
+  toggle:
+    source: net
+    manual: true
+    method: POST
+    url: "{{ settings.url }}/api/services/homeassistant/toggle"
+    headers: { Authorization: "Bearer [[secret:token]]", Content-Type: application/json }
+    body: { entity_id: "{{ arg }}" }
+
+ui:
+  blocks:
+    - { type: text, text: "Set the address, token and entities in this widget's settings.", size: sm, color: muted, visible: "{{ settings.entities | not }}" }
+    - type: each
+      items: "{{ st.items }}"
+      columns: "{{ settings.columns }}"
+      child:
+        type: column
+        gap: 0
+        children:
+          # Things that switch: lights, switches, fans, input booleans.
+          - type: button
+            style: tile
+            on: "{{ item.json.state | eq('on') }}"
+            label: "{{ item.json.attributes.friendly_name | default(item.item) }}"
+            note: "{{ item.json.state }}"
+            action: fetch.toggle
+            arg: "{{ item.item }}"
+            visible: "{{ item.json.state | among('on', 'off') }}"
+          # Everything else shows its value.
+          - type: stat
+            label: "{{ item.json.attributes.friendly_name | default(item.item) }}"
+            value: "{{ item.ok | choose(item.json.state, item.error) }} {{ item.json.attributes.unit_of_measurement }}"
+            size: lg
+            visible: "{{ item.json.state | among('on', 'off') | not }}"

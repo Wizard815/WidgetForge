@@ -1,0 +1,38 @@
+schema: 1
+id: forge.clipboard
+name: Clipboard History
+version: 1.0.0
+author: WidgetForge
+description: The last 25 things you copied. Click one to copy it again. Kept in memory only; never saved to disk.
+category: productivity
+
+window:
+  size: [280, 300]
+  min_size: [200, 140]
+  layer: normal
+
+style:
+  theme: glass
+  accent: "#c3a6ff"
+
+permissions:
+  clipboard: true
+
+data:
+  clip: { source: clipboard, interval: 1000 }
+
+ui:
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "Clipboard", weight: bold }
+        - { type: button, label: Clear, action: clipboard.clear, visible: "{{ clip.count }}" }
+    - type: table
+      header: false
+      items: "{{ clip.items }}"
+      empty: "Copy some text and it shows up here."
+      row_copy: "{{ row.text }}"
+      row_title: "Click to copy · {{ row.chars }} characters"
+      columns:
+        - { value: "{{ row.preview }}" }
+        - { value: "{{ row.lines | choose(row.lines, '') }}", width: 12%, align: right, color: muted }

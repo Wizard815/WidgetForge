@@ -1,0 +1,79 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.launcher
+name: Folder Portal
+version: 1.0.0
+author: WidgetForge
+description: A folder's files, folders and app shortcuts as tiles; click one to open it. Point it at a folder of shortcuts to make an app launcher.
+category: tools
+
+window:
+  size: [320, 220]
+  min_size: [120, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#9bb8ff"
+
+permissions:
+  folders: ["setting:folder"]
+  launch: true
+
+settings:
+  - { key: title, type: text, label: Title, default: "" }
+  - { key: folder, type: folder, label: Folder }
+  - { key: columns, type: number, label: Tiles per row, default: 4, min: 1, max: 10 }
+
+data:
+  dir: { source: folder, setting: folder, kind: all, interval: 15000 }
+
+lookups:
+  glyph:
+    "": "📄"
+    desktop: "🚀"
+    lnk: "🚀"
+    url: "🔗"
+    app: "🚀"
+    exe: "⚙"
+    sh: "⚙"
+    pdf: "📕"
+    txt: "📝"
+    md: "📝"
+    doc: "📄"
+    docx: "📄"
+    xls: "📊"
+    xlsx: "📊"
+    csv: "📊"
+    png: "🖼"
+    jpg: "🖼"
+    jpeg: "🖼"
+    gif: "🖼"
+    webp: "🖼"
+    mp3: "🎵"
+    flac: "🎵"
+    wav: "🎵"
+    mp4: "🎬"
+    mkv: "🎬"
+    zip: "📦"
+    7z: "📦"
+    default: "📄"
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold, visible: "{{ settings.title }}" }
+    - { type: text, text: "Choose a folder in this widget's settings.", size: sm, color: muted, visible: "{{ _errors.dir }}" }
+    - type: each
+      items: "{{ dir.files }}"
+      columns: "{{ settings.columns }}"
+      empty: "This folder is empty."
+      child:
+        type: button
+        style: tile
+        icon: "{{ item.dir | choose('📁', item.ext | lookup('glyph')) }}"
+        label: "{{ item.label }}"
+        title: "{{ item.name }}"
+        action: open_item
+        setting: folder
+        arg: "{{ item.name }}"

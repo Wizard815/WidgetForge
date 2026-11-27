@@ -1,0 +1,122 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.dns-blocker
+name: Ad Blocker
+version: 1.0.0
+author: WidgetForge
+description: Pi-hole (version 6) or AdGuard Home at a glance — queries, blocked share, blocklist size — with a button to pause blocking for 5 minutes.
+category: system
+
+window:
+  size: [280, 190]
+  min_size: [200, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#96060c"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: app, type: choice, label: App, default: pihole, options: [pihole, adguard] }
+  - { key: url, type: text, label: "Address (e.g. http://pi.hole or http://server:3000)", default: "" }
+  - { key: user, type: text, label: AdGuard user name, default: "" }
+  - { key: password, type: secret, label: "Password (Pi-hole: an app password works)" }
+  - { key: seconds, type: number, label: Check every (seconds), default: 30, min: 5, max: 3600 }
+
+data:
+  # Pi-hole 6: sign in once, reuse the session (it allows only a few at a time).
+  auth:
+    source: net
+    when: "{{ settings.app | eq('pihole') | choose(settings.url, false) }}"
+    method: POST
+    url: "{{ settings.url }}/api/auth"
+    headers: { Content-Type: application/json }
+    body: { password: "[[secret:password]]" }
+    interval: 1500000
+  ph:
+    source: net
+    when: "{{ auth.json.session.sid }}"
+    url: "{{ settings.url }}/api/stats/summary"
+    headers: { X-FTL-SID: "{{ auth.json.session.sid }}" }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+  ph_state:
+    source: net
+    when: "{{ auth.json.session.sid }}"
+    url: "{{ settings.url }}/api/dns/blocking"
+    headers: { X-FTL-SID: "{{ auth.json.session.sid }}" }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+  ph_pause:
+    source: net
+    manual: true
+    method: POST
+    url: "{{ settings.url }}/api/dns/blocking"
+    headers: { X-FTL-SID: "{{ auth.json.session.sid }}", Content-Type: application/json }
+    body: { blocking: "{{ arg }}", timer: "{{ arg | choose(null, 300) }}" }
+  ag:
+    source: net
+    when: "{{ settings.app | eq('adguard') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/control/stats"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+  ag_state:
+    source: net
+    when: "{{ settings.app | eq('adguard') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/control/status"
+    headers: { Authorization: "Basic [[basic:user:password]]" }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+  ag_pause:
+    source: net
+    manual: true
+    method: POST
+    url: "{{ settings.url }}/control/protection"
+    headers: { Authorization: "Basic [[basic:user:password]]", Content-Type: application/json }
+    body: { enabled: "{{ arg }}", duration: "{{ arg | choose(null, 300000) }}" }
+
+ui:
+  blocks:
+    - { type: text, text: "Set the address and password in this widget's settings.", size: sm, color: muted, visible: "{{ settings.url | not }}" }
+    # Pi-hole
+    - type: column
+      visible: "{{ settings.app | eq('pihole') | choose(settings.url, false) }}"
+      children:
+        - type: row
+          children:
+            - { type: text, text: Pi-hole, weight: bold }
+            - type: text
+              align: right
+              weight: bold
+              text: "{{ ph_state.json.blocking | eq('enabled') | choose('● Blocking', '● Paused') }}"
+              color: "{{ ph_state.json.blocking | eq('enabled') | choose('good', 'warn') }}"
+        - { type: text, text: "{{ auth.json.error.message }}", size: sm, color: bad, visible: "{{ auth.json.error }}" }
+        - type: grid
+          columns: 3
+          children:
+            - { type: stat, label: Queries, value: "{{ ph.json.queries.total | number }}", size: lg }
+            - { type: stat, label: Blocked, value: "{{ ph.json.queries.percent_blocked | fixed(1) }}%", size: lg }
+            - { type: stat, label: Blocklist, value: "{{ ph.json.gravity.domains_being_blocked | number }}", size: md }
+        - { type: button, label: Pause for 5 minutes, action: fetch.ph_pause, arg: false, visible: "{{ ph_state.json.blocking | eq('enabled') }}" }
+        - { type: button, label: "Resume blocking{{ ph_state.json.timer | choose(' (', '') }}{{ ph_state.json.timer | round }}{{ ph_state.json.timer | choose(' s left)', '') }}", action: fetch.ph_pause, arg: true, visible: "{{ ph_state.json.blocking | eq('disabled') }}" }
+    # AdGuard Home
+    - type: column
+      visible: "{{ settings.app | eq('adguard') | choose(settings.url, false) }}"
+      children:
+        - type: row
+          children:
+            - { type: text, text: AdGuard Home, weight: bold }
+            - type: text
+              align: right
+              weight: bold
+              text: "{{ ag_state.json.protection_enabled | choose('● Blocking', '● Paused') }}"
+              color: "{{ ag_state.json.protection_enabled | choose('good', 'warn') }}"
+        - type: grid
+          columns: 3
+          children:
+            - { type: stat, label: Queries, value: "{{ ag.json.num_dns_queries | number }}", size: lg }
+            - { type: stat, label: Blocked, value: "{{ ag.json.num_blocked_filtering | div(ag.json.num_dns_queries) | percent(1) }}", size: lg }
+            - { type: stat, label: Speed, value: "{{ ag.json.avg_processing_time | mul(1000) | fixed(0) }} ms", size: md }
+        - { type: button, label: Pause for 5 minutes, action: fetch.ag_pause, arg: false, visible: "{{ ag_state.json.protection_enabled }}" }
+        - { type: button, label: Resume blocking, action: fetch.ag_pause, arg: true, visible: "{{ ag_state.json.protection_enabled | not }}" }

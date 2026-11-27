@@ -1,9 +1,8 @@
 [package]
 name = "widgetforge"
 version = "0.1.0"
-description = "WidgetForge — desktop widgets for everyone"
 edition = "2021"
-rust-version = "1.90"
+description = "Desktop widgets"
 
 [lib]
 name = "widgetforge_lib"
@@ -13,21 +12,35 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-mime_guess = "2.0.5"
-percent-encoding = "2.3.2"
-reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
-serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.154"
-serde_yaml_ng = "0.10.0"
-sysinfo = "0.38.4"
-tauri = { version = "2", features = ["tray-icon", "image-png", "macos-private-api"] }
-tauri-plugin-autostart = "2"
-tauri-plugin-dialog = "2"
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
-thiserror = "2.0.21"
-uuid = { version = "1.29.3", features = ["v4"] }
-zip = { version = "9.8.1", default-features = false, features = ["deflate"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sysinfo = "0.40"
+reqwest = { version = "0.13", features = ["gzip"] }
+url = "2"
+sha2 = "0.10"
+base64 = "0.21"
+getrandom = "0.3"
+starship-battery = "0.12"
+arboard = { version = "3", default-features = false }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+# Already used by reqwest; used directly for email (IMAP over TLS).
+rustls = "0.23"
+# Already used by reqwest and tauri; used directly for .forgewidget packages.
+flate2 = "1"
+crc32fast = "1"
+dirs = "6"
+rustls-platform-verifier = "0.7"
 
-[dev-dependencies]
-tempfile = "3.27.0"
+[target.'cfg(target_os = "linux")'.dependencies]
+mpris = "2"
+# Already used by the clipboard; used directly for the screen-time widget.
+x11rb = { version = "0.13", features = ["screensaver"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_Threading", "Win32_System_SystemInformation"] }

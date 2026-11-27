@@ -1,0 +1,109 @@
+schema: 1
+id: forge.llm-usage
+name: LLM Spend
+version: 1.0.0
+author: WidgetForge
+description: What your AI API keys have spent today and this month. OpenRouter works with a normal key; Anthropic and OpenAI need an organization Admin key. Add one per provider, or stack them.
+category: info
+
+window:
+  size: [280, 170]
+  min_size: [200, 120]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#d9a7ff"
+
+permissions:
+  network: [openrouter.ai, api.anthropic.com, api.openai.com]
+
+settings:
+  - { key: provider, type: choice, label: Provider, default: openrouter, options: [openrouter, anthropic, openai] }
+  - { key: api_key, type: secret, label: "API key (Admin key for Anthropic and OpenAI)" }
+  - { key: label, type: text, label: Label, default: "" }
+  - { key: minutes, type: number, label: Refresh every (minutes), default: 15, min: 5, max: 1440 }
+
+data:
+  # OpenRouter: GET /api/v1/key works with a normal key. Amounts are credits.
+  openrouter:
+    source: net
+    when: "{{ settings.provider | eq('openrouter') | choose(settings.api_key, false) }}"
+    url: "https://openrouter.ai/api/v1/key"
+    headers: { Authorization: "Bearer [[secret:api_key]]" }
+    interval: "{{ settings.minutes | mul(60000) }}"
+  # Anthropic usage and cost analytics (beta). Amounts are cents; data lags 4-24 hours.
+  anthropic_today:
+    source: net
+    when: "{{ settings.provider | eq('anthropic') | choose(settings.api_key, false) }}"
+    url: "https://api.anthropic.com/v1/organizations/analytics/cost?starting_at={{ _now | utcdate('YYYY-MM-DD') }}T00:00:00Z"
+    headers:
+      x-api-key: "[[secret:api_key]]"
+      anthropic-version: "2026-10-21"
+      anthropic-beta: "analytics-usage-cost-2026-08-24"
+    interval: "{{ settings.minutes | mul(60000) }}"
+  anthropic_month:
+    source: net
+    when: "{{ settings.provider | eq('anthropic') | choose(settings.api_key, false) }}"
+    url: "https://api.anthropic.com/v1/organizations/analytics/cost?starting_at={{ _now | utcdate('YYYY-MM') }}-01T00:00:00Z"
+    headers:
+      x-api-key: "[[secret:api_key]]"
+      anthropic-version: "2026-10-21"
+      anthropic-beta: "analytics-usage-cost-2026-08-24"
+    interval: "{{ settings.minutes | mul(60000) }}"
+  # OpenAI organization costs: daily buckets in dollars.
+  openai_today:
+    source: net
+    when: "{{ settings.provider | eq('openai') | choose(settings.api_key, false) }}"
+    url: "https://api.openai.com/v1/organization/costs?start_time={{ _now | unix('day') }}&limit=1"
+    headers: { Authorization: "Bearer [[secret:api_key]]" }
+    interval: "{{ settings.minutes | mul(60000) }}"
+  openai_month:
+    source: net
+    when: "{{ settings.provider | eq('openai') | choose(settings.api_key, false) }}"
+    url: "https://api.openai.com/v1/organization/costs?start_time={{ _now | unix('month') }}&limit=31"
+    headers: { Authorization: "Bearer [[secret:api_key]]" }
+    interval: "{{ settings.minutes | mul(60000) }}"
+
+ui:
+  stack_title: false
+  blocks:
+    - type: row
+      children:
+        - { type: text, text: "{{ settings.label | default(settings.provider) | upper }}", weight: bold, size: sm }
+        - { type: text, text: "Set the API key in settings.", size: xs, color: muted, align: right, visible: "{{ settings.api_key | not }}" }
+
+    # OpenRouter
+    - type: grid
+      columns: 3
+      visible: "{{ settings.provider | eq('openrouter') | choose(openrouter.ok, false) }}"
+      children:
+        - { type: stat, label: Today, value: "{{ openrouter.json.data.usage_daily | fixed(2) }}", note: credits }
+        - { type: stat, label: This month, value: "{{ openrouter.json.data.usage_monthly | fixed(2) }}", note: credits }
+        - type: stat
+          label: Left on key
+          value: "{{ openrouter.json.data.limit_remaining | eq(null) | choose('No limit', openrouter.json.data.limit_remaining | fixed(2)) }}"
+          note: "{{ openrouter.json.data.limit | eq(null) | choose('', 'of ') }}{{ openrouter.json.data.limit }}"
+          color: accent
+
+    # Anthropic
+    - type: grid
+      columns: 2
+      visible: "{{ settings.provider | eq('anthropic') | choose(anthropic_month.ok, false) }}"
+      children:
+        - { type: stat, label: Today, value: "${{ anthropic_today.json.data | sum('cost.amount') | div(100) | fixed(2) }}" }
+        - { type: stat, label: This month, value: "${{ anthropic_month.json.data | sum('cost.amount') | div(100) | fixed(2) }}", color: accent }
+    - type: text
+      text: "Updated {{ anthropic_month.json.data_refreshed_at | date('MMM D HH:mm') }} · Anthropic data can be hours behind"
+      size: xs
+      color: muted
+      visible: "{{ anthropic_month.json.data_refreshed_at }}"
+
+    # OpenAI
+    - type: grid
+      columns: 2
+      visible: "{{ settings.provider | eq('openai') | choose(openai_month.ok, false) }}"
+      children:
+        - { type: stat, label: Today, value: "${{ openai_today.json.data | sum('results.amount.value') | fixed(2) }}" }
+        - { type: stat, label: This month, value: "${{ openai_month.json.data | sum('results.amount.value') | fixed(2) }}", color: accent }

@@ -1,0 +1,55 @@
+schema: 1
+id: forge.discord-account
+name: My Discord Servers
+version: 1.0.0
+author: WidgetForge
+description: The Discord servers you are in, with how many people are online. Sign in once in WidgetForge → Settings. Click a server to open it in Discord.
+category: social
+
+window:
+  size: [290, 340]
+  min_size: [200, 140]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#8c9eff"
+
+permissions:
+  discord: true
+
+settings:
+  - { key: sort, type: choice, label: Order, default: online, options: [online, members, name] }
+  - { key: rows, type: number, label: Servers shown, default: 12, min: 1, max: 200 }
+  - { key: minutes, type: number, label: Refresh every (minutes), default: 5, min: 1, max: 120 }
+
+data:
+  me: { source: discord, endpoint: me, interval: 3600000 }
+  servers: { source: discord, endpoint: guilds, interval: "{{ settings.minutes | max(1) | mul(60000) }}" }
+
+ui:
+  blocks:
+    - type: text
+      text: "Not signed in. Open WidgetForge → Settings → Discord to sign in."
+      size: sm
+      color: muted
+      visible: "{{ servers.signed_in | eq(false) }}"
+    - type: column
+      gap: 8
+      visible: "{{ servers.signed_in }}"
+      children:
+        - type: row
+          children:
+            - { type: text, text: "{{ me.data.global_name | default(me.data.username) }}", weight: bold, clip: true }
+            - { type: text, text: "{{ servers.data | count }} servers", size: sm, color: muted, align: right }
+        - type: table
+          header: false
+          items: "{{ settings.sort | eq('name') | choose(servers.data | sort('name'), servers.data | sort(settings.sort | eq('members') | choose('approximate_member_count', 'approximate_presence_count'), 'desc')) }}"
+          limit: "{{ settings.rows }}"
+          empty: "You are not in any servers."
+          row_open: "https://discord.com/channels/{{ row.id }}"
+          row_title: "{{ row.name }}"
+          columns:
+            - { value: "{{ row.name }}" }
+            - { value: "● {{ row.approximate_presence_count }}", width: 22%, align: right, color: good }
+            - { value: "{{ row.approximate_member_count }}", width: 18%, align: right, color: muted }

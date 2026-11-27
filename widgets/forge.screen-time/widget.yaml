@@ -1,0 +1,49 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.screen-time
+name: Screen Time
+version: 1.0.0
+author: WidgetForge
+description: Which apps you used today and for how long. Recorded on this computer only, never sent anywhere; time away from the keyboard is not counted. Works on Windows and Linux (X11).
+category: system
+
+window:
+  size: [300, 260]
+  min_size: [220, 140]
+  layer: desktop
+
+style:
+  theme: glass
+  accent: "#b48cff"
+
+permissions:
+  activity: true
+
+settings:
+  - { key: rows, type: number, label: Apps shown, default: 6, min: 1, max: 20 }
+
+data:
+  st: { source: screentime, interval: 30000 }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ st.reason }}", size: sm, color: muted, visible: "{{ st.available | eq(false) }}" }
+    - type: row
+      visible: "{{ st.available }}"
+      children:
+        - { type: stat, label: Today, value: "{{ st.total | hm }}", size: xl }
+        - { type: stat, label: Yesterday, value: "{{ st.yesterday | hm }}", size: md, align: right }
+    - type: table
+      header: false
+      items: "{{ st.apps }}"
+      limit: "{{ settings.rows }}"
+      empty: "Nothing yet today. Time is counted while this widget is on the desktop."
+      columns:
+        - { value: "{{ row.name }}", width: 40% }
+        - { bar: "{{ row.share }}", value: "{{ row.share | fixed(0) }}%" }
+        - { value: "{{ row.seconds | hm }}", width: 22%, align: right }
+    - type: row
+      visible: "{{ st.available }}"
+      children:
+        - { type: text, text: "7-day average {{ st.week_average | hm }}", size: xs, color: muted }
+        - { type: button, label: Clear history, action: screentime.clear, confirm: true }

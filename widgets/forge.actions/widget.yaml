@@ -1,0 +1,122 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.actions
+name: Action Buttons
+version: 1.0.0
+author: WidgetForge
+description: A grid of buttons that each run a command you type, like a Stream Deck on your desktop. Restart a service, start a backup, open a project. Only commands you type yourself are run.
+category: system
+
+window:
+  size: [300, 170]
+  min_size: [90, 70]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#ff9f6b"
+
+permissions:
+  run: ["setting:cmd1", "setting:cmd2", "setting:cmd3", "setting:cmd4", "setting:cmd5", "setting:cmd6", "setting:cmd7", "setting:cmd8"]
+
+settings:
+  - { key: title, type: text, label: Title, default: "" }
+  - { key: columns, type: number, label: Buttons per row, default: 4, min: 1, max: 8 }
+  - { key: label1, type: text, label: Button 1 name, default: "" }
+  - { key: icon1, type: text, label: Button 1 symbol (an emoji), default: "" }
+  - { key: cmd1, type: command, label: Button 1 command, quiet: false }
+  - { key: confirm1, type: bool, label: Button 1 asks first, default: false }
+  - { key: label2, type: text, label: Button 2 name, default: "" }
+  - { key: icon2, type: text, label: Button 2 symbol (an emoji), default: "" }
+  - { key: cmd2, type: command, label: Button 2 command, quiet: true }
+  - { key: confirm2, type: bool, label: Button 2 asks first, default: false }
+  - { key: label3, type: text, label: Button 3 name, default: "" }
+  - { key: icon3, type: text, label: Button 3 symbol (an emoji), default: "" }
+  - { key: cmd3, type: command, label: Button 3 command, quiet: true }
+  - { key: confirm3, type: bool, label: Button 3 asks first, default: false }
+  - { key: label4, type: text, label: Button 4 name, default: "" }
+  - { key: icon4, type: text, label: Button 4 symbol (an emoji), default: "" }
+  - { key: cmd4, type: command, label: Button 4 command, quiet: true }
+  - { key: confirm4, type: bool, label: Button 4 asks first, default: false }
+  - { key: label5, type: text, label: Button 5 name, default: "" }
+  - { key: icon5, type: text, label: Button 5 symbol (an emoji), default: "" }
+  - { key: cmd5, type: command, label: Button 5 command, quiet: true }
+  - { key: confirm5, type: bool, label: Button 5 asks first, default: false }
+  - { key: label6, type: text, label: Button 6 name, default: "" }
+  - { key: icon6, type: text, label: Button 6 symbol (an emoji), default: "" }
+  - { key: cmd6, type: command, label: Button 6 command, quiet: true }
+  - { key: confirm6, type: bool, label: Button 6 asks first, default: false }
+  - { key: label7, type: text, label: Button 7 name, default: "" }
+  - { key: icon7, type: text, label: Button 7 symbol (an emoji), default: "" }
+  - { key: cmd7, type: command, label: Button 7 command, quiet: true }
+  - { key: confirm7, type: bool, label: Button 7 asks first, default: false }
+  - { key: label8, type: text, label: Button 8 name, default: "" }
+  - { key: icon8, type: text, label: Button 8 symbol (an emoji), default: "" }
+  - { key: cmd8, type: command, label: Button 8 command, quiet: true }
+  - { key: confirm8, type: bool, label: Button 8 asks first, default: false }
+
+ui:
+  blocks:
+    - { type: text, text: "{{ settings.title }}", weight: bold, visible: "{{ settings.title }}" }
+    - { type: text, text: "Give each button a name and a command in this widget's settings.", size: sm, color: muted, visible: "{{ settings.cmd1 | not }}" }
+    - type: grid
+      columns: "{{ settings.columns }}"
+      gap: 6
+      children:
+        - type: button
+          style: tile
+          icon: "{{ settings.icon1 }}"
+          label: "{{ settings.label1 | default('Button 1') }}"
+          action: run.cmd1
+          confirm: "{{ settings.confirm1 }}"
+          visible: "{{ settings.cmd1 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon2 }}"
+          label: "{{ settings.label2 | default('Button 2') }}"
+          action: run.cmd2
+          confirm: "{{ settings.confirm2 }}"
+          visible: "{{ settings.cmd2 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon3 }}"
+          label: "{{ settings.label3 | default('Button 3') }}"
+          action: run.cmd3
+          confirm: "{{ settings.confirm3 }}"
+          visible: "{{ settings.cmd3 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon4 }}"
+          label: "{{ settings.label4 | default('Button 4') }}"
+          action: run.cmd4
+          confirm: "{{ settings.confirm4 }}"
+          visible: "{{ settings.cmd4 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon5 }}"
+          label: "{{ settings.label5 | default('Button 5') }}"
+          action: run.cmd5
+          confirm: "{{ settings.confirm5 }}"
+          visible: "{{ settings.cmd5 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon6 }}"
+          label: "{{ settings.label6 | default('Button 6') }}"
+          action: run.cmd6
+          confirm: "{{ settings.confirm6 }}"
+          visible: "{{ settings.cmd6 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon7 }}"
+          label: "{{ settings.label7 | default('Button 7') }}"
+          action: run.cmd7
+          confirm: "{{ settings.confirm7 }}"
+          visible: "{{ settings.cmd7 }}"
+        - type: button
+          style: tile
+          icon: "{{ settings.icon8 }}"
+          label: "{{ settings.label8 | default('Button 8') }}"
+          action: run.cmd8
+          confirm: "{{ settings.confirm8 }}"
+          visible: "{{ settings.cmd8 }}"

@@ -1,0 +1,78 @@
+# PLACEHOLDER wording: name, description and labels.
+schema: 1
+id: forge.now-streaming
+name: Now Streaming
+version: 1.0.0
+author: WidgetForge
+description: Who is watching what on your Plex or Jellyfin server, with progress and whether it is paused.
+category: media
+
+window:
+  size: [320, 200]
+  min_size: [220, 90]
+  layer: desktop
+  multi_instance: true
+
+style:
+  theme: glass
+  accent: "#e5a00d"
+
+permissions:
+  network: ["setting:url"]
+
+settings:
+  - { key: app, type: choice, label: Server, default: plex, options: [plex, jellyfin] }
+  - { key: url, type: text, label: "Server address (e.g. http://server:32400 or http://server:8096)", default: "" }
+  - { key: token, type: secret, label: "Plex token or Jellyfin API key" }
+  - { key: seconds, type: number, label: Check every (seconds), default: 15, min: 5, max: 600 }
+
+data:
+  plex:
+    source: net
+    when: "{{ settings.app | eq('plex') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/status/sessions"
+    headers: { X-Plex-Token: "[[secret:token]]", Accept: application/json }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+  jf:
+    source: net
+    when: "{{ settings.app | eq('jellyfin') | choose(settings.url, false) }}"
+    url: "{{ settings.url }}/Sessions?activeWithinSeconds=960"
+    headers: { Authorization: "MediaBrowser Token=\"[[secret:token]]\"" }
+    interval: "{{ settings.seconds | max(5) | mul(1000) }}"
+
+ui:
+  blocks:
+    - { type: text, text: "Set the server address and token in this widget's settings.", size: sm, color: muted, visible: "{{ settings.url | not }}" }
+    - type: row
+      visible: "{{ settings.url }}"
+      children:
+        - { type: text, text: "{{ settings.app | choose('Now streaming', '') }}", weight: bold }
+        - type: text
+          align: right
+          size: sm
+          color: muted
+          text: "{{ settings.app | eq('plex') | choose(plex.json.MediaContainer.size, jf.json | where('NowPlayingItem') | count) }} playing"
+    # Plex
+    - type: table
+      header: false
+      items: "{{ plex.json.MediaContainer.Metadata }}"
+      visible: "{{ settings.app | eq('plex') }}"
+      empty: "Nobody is watching."
+      row_title: "{{ row.Player.title }} · {{ row.Player.state }}"
+      columns:
+        - { value: "{{ row.User.title }}", width: 24%, color: accent }
+        - { value: "{{ row.grandparentTitle | choose(row.grandparentTitle, '') }}{{ row.grandparentTitle | choose(' – ', '') }}{{ row.title }}" }
+        - { bar: "{{ row.viewOffset | div(row.duration) | mul(100) }}", value: "{{ row.viewOffset | div(1000) | duration_clock }}", width: 18% }
+        - { value: "{{ row.Player.state | eq('paused') | choose('⏸', '▶') }}", width: 8%, align: right }
+    # Jellyfin
+    - type: table
+      header: false
+      items: "{{ jf.json | where('NowPlayingItem') }}"
+      visible: "{{ settings.app | eq('jellyfin') }}"
+      empty: "Nobody is watching."
+      row_title: "{{ row.DeviceName }}"
+      columns:
+        - { value: "{{ row.UserName }}", width: 24%, color: accent }
+        - { value: "{{ row.NowPlayingItem.SeriesName | choose(row.NowPlayingItem.SeriesName, '') }}{{ row.NowPlayingItem.SeriesName | choose(' – ', '') }}{{ row.NowPlayingItem.Name }}" }
+        - { bar: "{{ row.PlayState.PositionTicks | div(row.NowPlayingItem.RunTimeTicks) | mul(100) }}", value: "{{ row.PlayState.PositionTicks | div(10000000) | duration_clock }}", width: 18% }
+        - { value: "{{ row.PlayState.IsPaused | choose('⏸', '▶') }}", width: 8%, align: right }
