@@ -160,6 +160,7 @@ def main():
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "widgets": sorted(entries, key=lambda e: e["name"].lower()),
         }
+        Path(args.out).mkdir(parents=True, exist_ok=True)
         Path(args.out, "index.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
         print(f"wrote {len(entries)} widgets to {args.out}/index.json")
 

@@ -237,11 +237,22 @@ Added 2026-11-26 (tenth pass): the widget catalog (Hub → Browse) and the regis
   33 JS + 38 Rust tests (+1 ignored).
 - NOT tested: the GitHub Actions workflow (needs the repository), a real https catalog,
   clicking in the real app window, remote icons.
-- Owner to decide: create the public repository (name and owner), then set DEFAULT_INDEX;
-  whether to sign catalog packages (DESIGN.md open question) — today trust rests on the
+- Owner to decide: whether to sign catalog packages (DESIGN.md open question) — today trust rests on the
   catalog's review plus the checksum in the index served over https.
 
 Not in the demo yet: Steam, assistant, Windows/macOS test. (Sign-in autostart is built but untested.)
+
+### Pass 11 (2026-11-27): published to GitHub
+
+- Owner signed in with GitHub's `gh` tool (`gh auth login`, kept in the keyring); git pushes use it.
+- App code: https://github.com/Wizard815/WidgetForge (public, existing repo). The new code is one
+  commit on top of the old M1 history; the old Apache-2.0 LICENSE is kept.
+- Catalog: https://github.com/Wizard815/widgetforge-widgets (public). GitHub Pages serves
+  https://wizard815.github.io/widgetforge-widgets/index.json (live, 0 widgets so far).
+- DEFAULT_INDEX in registry.rs now points at that catalog; installer rebuilt.
+- Fixed: the catalog build failed when there were no widgets (output folder not made).
+- Commits use the GitHub noreply address. RULES.md still says "local git only": owner to update.
+- NOT tested: Browse in the real app against the live catalog; a widget submitted by pull request.
 
 ## Owner must decide / provide
 
