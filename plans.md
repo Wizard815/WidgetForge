@@ -252,7 +252,12 @@ Not in the demo yet: Steam, assistant, Windows/macOS test. (Sign-in autostart is
 - DEFAULT_INDEX in registry.rs now points at that catalog; installer rebuilt.
 - Fixed: the catalog build failed when there were no widgets (output folder not made).
 - Commits use the GitHub noreply address. RULES.md still says "local git only": owner to update.
-- NOT tested: Browse in the real app against the live catalog; a widget submitted by pull request.
+- Tested 2026-11-27: test pull request #1 on the catalog (closed, not merged, branch deleted).
+  A good widget passed the checks; a broken one (forge. id, wrong folder, bad version) failed
+  with clear messages. The core installed that widget from a locally built catalog
+  (`a_built_catalog_installs`, served from 127.0.0.1).
+- NOT tested: Browse in the real app window against the live catalog (it has 0 widgets);
+  a package served from GitHub Pages itself.
 
 ## Owner must decide / provide
 
